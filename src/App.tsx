@@ -1,0 +1,24 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { PlayerProvider } from '@/context/PlayerContext';
+import { GameMenu } from '@/routes/GameMenu';
+import { NeverHaveIEverScreen } from '@/routes/NeverHaveIEverScreen';
+
+/**
+ * Composant principal de l'application
+ * Configure le routing et les providers globaux
+ */
+function App() {
+  return (
+    <PlayerProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<GameMenu />} />
+          <Route path="/game/never-have-i-ever" element={<NeverHaveIEverScreen />} />
+        </Routes>
+      </BrowserRouter>
+    </PlayerProvider>
+  );
+}
+
+export default App;
