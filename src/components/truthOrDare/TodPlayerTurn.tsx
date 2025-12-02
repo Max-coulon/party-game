@@ -11,18 +11,10 @@ interface TodPlayerTurnProps {
  * Composant pour afficher le joueur dont c'est le tour
  */
 export const TodPlayerTurn: React.FC<TodPlayerTurnProps> = ({
-  player,
-  roundNumber,
-  totalRounds,
+  player
 }) => {
   return (
     <div className="text-center space-y-4 animate-slide-down">
-      {/* Tour indicator */}
-      <div className="inline-block bg-dark-800 px-6 py-2 rounded-full border-2 border-primary-500">
-        <span className="text-primary-300 font-semibold">
-          {totalRounds ? `Tour ${roundNumber} / ${totalRounds}` : `Tour ${roundNumber}`}
-        </span>
-      </div>
 
       {/* Player info */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-800 p-6 rounded-3xl border-4 border-primary-400 shadow-2xl">

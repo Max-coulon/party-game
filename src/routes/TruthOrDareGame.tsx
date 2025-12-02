@@ -29,9 +29,15 @@ export const TruthOrDareGame: React.FC<TruthOrDareGameProps> = ({
   onEndGame,
 }) => {
   return (
-    <div className="space-y-8">
-      {/* Bouton terminer la partie (en haut à droite) */}
-      <div className="flex justify-end">
+    <div className="space-y-4">
+      {/* Nombre de tours et bouton terminer */}
+      <div className="flex justify-between items-center">
+        {/* Tour indicator */}
+        <div className="inline-block bg-dark-800 px-6 py-2 rounded-full border-2 border-primary-500">
+            <span className="text-primary-300 font-semibold">
+                {totalRounds ? `Tour ${currentRound} / ${totalRounds}` : `Tour ${currentRound}`}
+            </span>
+        </div>
         <button
           onClick={onEndGame}
           className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/50 rounded-xl font-semibold transition-all duration-200"
@@ -48,7 +54,7 @@ export const TruthOrDareGame: React.FC<TruthOrDareGameProps> = ({
       />
 
       {/* Affichage de la carte OU des boutons de choix */}
-      <div className="min-h-[400px] flex items-center justify-center">
+      <div className="min-h-[300px] flex items-center justify-center">
         {currentCard ? (
           // Une carte est tirée → afficher la carte avec boutons de résolution
           <div className="w-full max-w-2xl">

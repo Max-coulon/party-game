@@ -23,9 +23,11 @@ export const PageContainer: React.FC<PageContainerProps> = ({
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-600/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      {/* Contenu principal centré avec padding-top pour la TopBar fixe */}
+      {/* Contenu principal centré avec padding-top pour la TopBar fixe + safe area */}
       <div className="max-w-mobile-lg mx-auto relative z-10 pt-16">
-        {children}
+        <div className="pt-safe">
+          {children}
+        </div>
       </div>
     </div>
   );

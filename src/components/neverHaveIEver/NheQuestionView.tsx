@@ -65,8 +65,8 @@ export const NheQuestionView: React.FC<NheQuestionViewProps> = ({
 
       {/* Carte de question avec effet 3D */}
       <div className={`
-        p-8 bg-gradient-to-br ${style.bg} 
-        border-2 ${style.border} rounded-3xl 
+        p-5 bg-gradient-to-br ${style.bg} 
+        border-2 ${style.border} rounded-2xl 
         shadow-2xl ${style.glow}
         backdrop-blur-lg
         transform transition-all duration-300
@@ -82,24 +82,24 @@ export const NheQuestionView: React.FC<NheQuestionViewProps> = ({
         {/* Contenu de la carte */}
         <div className="relative z-10">
           {/* Badge du mode avec animation */}
-          <div className="flex items-center justify-center gap-3 mb-6 animate-scale-in">
-            <span className="text-3xl animate-bounce-slow">{style.emoji}</span>
-            <span className={`text-base font-bold uppercase tracking-widest ${style.text} drop-shadow-lg`}>
+          <div className="flex items-center justify-center gap-2 mb-4 animate-scale-in">
+            <span className="text-2xl animate-bounce-slow">{style.emoji}</span>
+            <span className={`text-sm font-bold uppercase tracking-widest ${style.text} drop-shadow-lg`}>
               {question.mode}
             </span>
           </div>
 
           {/* Question */}
-          <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8 leading-relaxed animate-slide-up drop-shadow-lg">
+          <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-5 leading-snug animate-slide-up drop-shadow-lg">
             {question.text}
           </h2>
 
           {/* Gorgées avec design amélioré */}
-          <div className="flex items-center justify-center gap-4 p-5 bg-dark-800/70 backdrop-blur-md rounded-2xl border border-dark-600 shadow-inner">
-            <span className="text-4xl animate-pulse-slow">🍺</span>
+          <div className="flex items-center justify-center gap-3 p-3 bg-dark-800/70 backdrop-blur-md rounded-xl border border-dark-600 shadow-inner">
+            <span className="text-3xl animate-pulse-slow">🍺</span>
             <div className="text-center">
-              <p className="text-4xl font-extrabold text-white drop-shadow-lg">{question.sips}</p>
-              <p className="text-sm text-dark-300 font-medium uppercase tracking-wide">
+              <p className="text-3xl font-extrabold text-white drop-shadow-lg">{question.sips}</p>
+              <p className="text-xs text-dark-300 font-medium uppercase tracking-wide">
                 {question.sips > 1 ? 'gorgées' : 'gorgée'}
               </p>
             </div>

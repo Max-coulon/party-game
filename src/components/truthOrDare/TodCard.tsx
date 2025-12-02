@@ -24,47 +24,47 @@ export const TodCard: React.FC<TodCardProps> = ({ card, onComplete, onRefuse }) 
   return (
     <div className="animate-scale-in">
       <div
-        className={`relative p-8 rounded-3xl border-4 ${borderColor} bg-gradient-to-br ${bgGradient} shadow-2xl`}
+        className={`relative p-4 md:p-6 rounded-2xl border-3 ${borderColor} bg-gradient-to-br ${bgGradient} shadow-2xl`}
       >
         {/* Badge Type */}
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <div
-            className={`${badgeBg} px-6 py-2 rounded-full shadow-lg border-2 border-white flex items-center gap-2`}
+            className={`${badgeBg} px-4 py-1 rounded-full shadow-lg border-2 border-white flex items-center gap-1.5`}
           >
-            <span className="text-2xl">{icon}</span>
-            <span className="text-white font-bold text-lg uppercase">
+            <span className="text-lg">{icon}</span>
+            <span className="text-white font-bold text-sm uppercase">
               {isTruth ? 'Vérité' : 'Action'}
             </span>
           </div>
         </div>
 
         {/* Niveau */}
-        <div className="absolute top-4 right-4">
-          <span className="text-white/70 text-sm font-semibold uppercase">
+        <div className="absolute top-2 right-3">
+          <span className="text-white/70 text-xs font-semibold uppercase">
             {card.level}
           </span>
         </div>
 
         {/* Texte de la carte */}
-        <div className="mt-8 mb-8">
-          <p className="text-white text-2xl md:text-3xl font-bold text-center leading-relaxed">
+        <div className="mt-6 mb-4">
+          <p className="text-white text-lg md:text-xl font-bold text-center leading-snug">
             {card.text}
           </p>
         </div>
 
         {/* Boutons de résolution */}
-        <div className="flex gap-4 mt-6">
+        <div className="flex gap-3 mt-4">
           <button
             onClick={onComplete}
-            className="flex-1 py-4 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold text-lg rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+            className="flex-1 py-3 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold text-base rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
           >
-            {isTruth ? "✅ J'ai répondu" : "✅ C'est fait"}
+            {isTruth ? "✅ Répondu" : "✅ Fait"}
           </button>
           <button
             onClick={onRefuse}
-            className="flex-1 py-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold text-lg rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+            className="flex-1 py-3 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold text-base rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
           >
-            ❌ Je refuse
+            ❌ Refusé
           </button>
         </div>
 

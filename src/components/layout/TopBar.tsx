@@ -18,6 +18,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary-600 via-primary-700 to-primary-600 shadow-2xl border-b-2 border-primary-500/20 backdrop-blur-sm">
+      {/* Safe area for iPhone notch */}
+      <div className="pt-safe" />
       <div className="flex items-center justify-between h-16 px-5 max-w-mobile-lg mx-auto">
         {/* Bouton retour avec animation */}
         <div className="w-12">
