@@ -4,6 +4,7 @@ import { PlayerProvider } from '@/context/PlayerContext';
 import { GameMenu } from '@/routes/GameMenu';
 import { NeverHaveIEverScreen } from '@/routes/NeverHaveIEverScreen';
 import { TruthOrDareScreen } from '@/routes/TruthOrDareScreen';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 /**
  * Composant principal de l'application
@@ -18,6 +19,7 @@ function App() {
           <Route path="/game/never-have-i-ever" element={<NeverHaveIEverScreen />} />
           <Route path="/game/truth-or-dare" element={<TruthOrDareScreen />} />
         </Routes>
+        <PwaInstallPrompt />
       </BrowserRouter>
     </PlayerProvider>
   );

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'icônes Party Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #0f172a;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #0ea5e9;
+            margin: 10px;
+        }
+        button {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0284c7;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Générateur d'icônes Party Game</h1>
+        <p>Cliquez sur les boutons pour télécharger les icônes nécessaires pour la PWA.</p>
+        
+        <canvas id="canvas" width="512" height="512"></canvas>
+        
+        <div>
+            <button onclick="generateIcon(64)">Télécharger 64x64</button>
+            <button onclick="generateIcon(192)">Télécharger 192x192</button>
+            <button onclick="generateIcon(512)">Télécharger 512x512</button>
+            <button onclick="generateIcon(180, 'apple-touch-icon')">Télécharger Apple Touch Icon</button>
+            <button onclick="generateMaskableIcon()">Télécharger Maskable Icon</button>
+        </div>
+        
+        <h3>Splash Screens (à générer manuellement)</h3>
+        <p>Pour les splash screens iOS, créez des images avec votre logo centré sur fond #0f172a aux dimensions suivantes :</p>
+        <ul>
+            <li>640x1136 (iPhone SE)</li>
+            <li>750x1334 (iPhone 8)</li>
+            <li>828x1792 (iPhone 11)</li>
+            <li>1125x2436 (iPhone X/XS)</li>
+            <li>1179x2556 (iPhone 14 Pro)</li>
+            <li>1242x2208 (iPhone 8 Plus)</li>
+            <li>1242x2688 (iPhone XS Max)</li>
+            <li>1290x2796 (iPhone 14 Pro Max)</li>
+            <li>1536x2048 (iPad Mini, iPad)</li>
+            <li>1668x2388 (iPad Pro 11")</li>
+            <li>2048x2732 (iPad Pro 12.9")</li>
+        </ul>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawIcon(size, isMaskable = false) {
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Background
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, size, size);
+            
+            // For maskable icons, add safe zone padding
+            const padding = isMaskable ? size * 0.1 : 0;
+            const effectiveSize = size - (padding * 2);
+            
+            // Gradient circle
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = effectiveSize * 0.4;
+            
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+            gradient.addColorStop(0, '#0ea5e9');
+            gradient.addColorStop(1, '#0284c7');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Party emoji
+            ctx.font = `${effectiveSize * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎉', centerX, centerY);
+        }
+
+        function generateIcon(size, filename = null) {
+            drawIcon(size, false);
+            const link = document.createElement('a');
+            link.download = filename || `pwa-${size}x${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function generateMaskableIcon() {
+            drawIcon(512, true);
+            const link = document.createElement('a');
+            link.download = 'maskable-icon-512x512.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Draw initial icon
+        drawIcon(512);
+    </script>
+</body>
+</html>
