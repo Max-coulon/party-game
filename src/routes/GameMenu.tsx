@@ -10,8 +10,6 @@ import { Game } from '@/types';
 
 /**
  * Liste des jeux disponibles
- * Pour l'instant, uniquement "Je n'ai jamais"
- * Plus tard, on pourra ajouter d'autres jeux facilement
  */
 const availableGames: Game[] = [
   {
@@ -21,14 +19,13 @@ const availableGames: Game[] = [
     minPlayers: 2,
     icon: '🍺',
   },
-  // Autres jeux à ajouter ici plus tard
-  // {
-  //   id: 'truth-or-dare',
-  //   name: 'Action ou Vérité',
-  //   description: 'Oses-tu ?',
-  //   minPlayers: 2,
-  //   icon: '🎭',
-  // },
+  {
+    id: 'truth-or-dare',
+    name: 'Action ou Vérité',
+    description: 'Oses-tu relever le défi ?',
+    minPlayers: 2,
+    icon: '🎭',
+  },
 ];
 
 /**
