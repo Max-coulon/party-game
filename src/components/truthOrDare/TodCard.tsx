@@ -1,5 +1,5 @@
 import React from 'react';
-import { TodItem, TruthOrDareType } from '@/types';
+import { TodItem } from '@/types';
 
 interface TodCardProps {
   card: TodItem;

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import {
   NheMode,
   NheTheme,
@@ -213,7 +213,7 @@ export const useNeverHaveIEverGameV2 = (): UseNeverHaveIEverGameV2 => {
       let specialRuleTriggered: string | undefined;
 
       // Règle Mute : joueurs qui refusent de répondre
-      const mutedPlayers = mutedPlayerIds.map((id) => ({ id, muted: true }));
+      // const mutedPlayers = mutedPlayerIds.map((id) => ({ id, muted: true }));
       const mutedSips = specialRules.muteRule ? 2 : 0;
 
       // Joueurs qui ont répondu "oui"
@@ -285,7 +285,7 @@ export const useNeverHaveIEverGameV2 = (): UseNeverHaveIEverGameV2 => {
       // Enregistrer les stats
       const winner = [...players].sort((a, b) => b.score - a.score)[0];
       if (winner) {
-        recordGamePlayed(winner.id, winner.name, config.selectedModes);
+        recordGamePlayed(winner.id, config.selectedModes);
       }
     }
   }, [currentQuestionIndex, questions.length, config, players]);

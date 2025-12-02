@@ -41,11 +41,7 @@ export const saveStats = (stats: GameStats): void => {
 /**
  * Incrémente le compteur de parties jouées et met à jour les stats
  */
-export const recordGamePlayed = (
-  winnerId: string,
-  winnerName: string,
-  modes: NheMode[]
-): void => {
+export const recordGamePlayed = (winnerId: string, modes: NheMode[]): void => {
   const stats = getStats();
 
   // Incrémenter le total de parties

@@ -3,12 +3,10 @@ import {
   Player,
   TodGameConfig,
   TodGameState,
-  TodItem,
   TruthOrDareType,
   TodCardResolution,
   TodHistoryEntry,
   TodPlayerStats,
-  TodLevel,
 } from "@/types";
 import { getRandomItem } from "@/data/truthOrDareData";
 
