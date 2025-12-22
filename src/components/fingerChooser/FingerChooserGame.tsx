@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { useFingerChooser } from "@/hooks/useFingerChooser";
 import { FingerToken } from "./FingerToken";
 import { CountdownDisplay } from "./CountdownDisplay";
@@ -25,8 +25,56 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    handlePointerCancel,
   } = useFingerChooser();
+
+  /**
+   * Vérifie si l'événement provient d'un bouton
+   */
+  const isButtonEvent = useCallback((e: PointerEvent): boolean => {
+    const target = e.target as HTMLElement;
+    // Vérifie si le target ou un de ses parents est un bouton
+    return target.closest("button") !== null;
+  }, []);
+
+  /**
+   * Wrapper pour ignorer les événements sur les boutons
+   */
+  const wrappedPointerDown = useCallback((e: PointerEvent) => {
+    if (isButtonEvent(e)) return;
+    handlePointerDown(e);
+  }, [handlePointerDown, isButtonEvent]);
+
+  const wrappedPointerMove = useCallback((e: PointerEvent) => {
+    if (isButtonEvent(e)) return;
+    handlePointerMove(e);
+  }, [handlePointerMove, isButtonEvent]);
+
+  const wrappedPointerUp = useCallback((e: PointerEvent) => {
+    if (isButtonEvent(e)) return;
+    handlePointerUp(e);
+  }, [handlePointerUp, isButtonEvent]);
+
+  /**
+   * Attacher les event listeners natifs pour le multi-touch
+   */
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener("pointerdown", wrappedPointerDown);
+    container.addEventListener("pointermove", wrappedPointerMove);
+    container.addEventListener("pointerup", wrappedPointerUp);
+    container.addEventListener("pointercancel", wrappedPointerUp);
+    container.addEventListener("pointerleave", wrappedPointerUp);
+
+    return () => {
+      container.removeEventListener("pointerdown", wrappedPointerDown);
+      container.removeEventListener("pointermove", wrappedPointerMove);
+      container.removeEventListener("pointerup", wrappedPointerUp);
+      container.removeEventListener("pointercancel", wrappedPointerUp);
+      container.removeEventListener("pointerleave", wrappedPointerUp);
+    };
+  }, [wrappedPointerDown, wrappedPointerMove, wrappedPointerUp]);
 
   /**
    * Empêcher les comportements par défaut du navigateur
@@ -36,7 +84,14 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    const preventDefault = (e: Event) => {
+    const preventDefault = (e: TouchEvent) => {
+      // Ne pas bloquer les touches sur les boutons
+      const target = e.target as HTMLElement;
+      if (target.closest("button")) return;
+      e.preventDefault();
+    };
+
+    const preventAll = (e: Event) => {
       e.preventDefault();
     };
 
@@ -46,17 +101,17 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
     container.addEventListener("touchend", preventDefault, { passive: false });
 
     // Empêcher le menu contextuel (long press)
-    container.addEventListener("contextmenu", preventDefault);
+    container.addEventListener("contextmenu", preventAll);
 
     // Empêcher la sélection de texte
-    container.addEventListener("selectstart", preventDefault);
+    container.addEventListener("selectstart", preventAll);
 
     return () => {
       container.removeEventListener("touchstart", preventDefault);
       container.removeEventListener("touchmove", preventDefault);
       container.removeEventListener("touchend", preventDefault);
-      container.removeEventListener("contextmenu", preventDefault);
-      container.removeEventListener("selectstart", preventDefault);
+      container.removeEventListener("contextmenu", preventAll);
+      container.removeEventListener("selectstart", preventAll);
     };
   }, []);
 
@@ -73,11 +128,6 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
         WebkitUserSelect: "none",
         userSelect: "none",
       }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      onPointerLeave={handlePointerUp}
     >
       {/* Effet de fond animé */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -190,27 +240,9 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
 
       {/* Bouton Recommencer (après choix) */}
       {status === "chosen" && (
-        <div
-          className="absolute bottom-8 left-0 right-0 flex justify-center z-50"
-          style={{ touchAction: "manipulation" }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onPointerUp={(e) => e.stopPropagation()}
-          onPointerMove={(e) => e.stopPropagation()}
-        >
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center z-50">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              reset();
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerUp={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              reset();
-            }}
+            onClick={reset}
             className="
               px-8 py-4
               bg-gradient-to-r from-primary-600 to-primary-700
@@ -221,7 +253,6 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
               shadow-lg shadow-primary-500/30
               transition-all duration-300
               transform hover:scale-105 active:scale-95
-              touch-auto
               animate-fade-in
             "
             style={{ touchAction: "manipulation" }}

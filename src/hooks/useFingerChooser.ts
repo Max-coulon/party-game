@@ -1,9 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useSyncExternalStore } from "react";
 import { FingerToken, FingerChooserStatus } from "@/types";
 
 /**
  * Palette de couleurs pour les doigts
- * Couleurs vives et distinctes pour différencier chaque joueur
  */
 const FINGER_COLORS = [
   "#ef4444", // Rouge
@@ -18,73 +17,135 @@ const FINGER_COLORS = [
   "#84cc16", // Lime
 ];
 
-/**
- * Durée du décompte en secondes
- */
 const COUNTDOWN_DURATION = 5;
-
-/**
- * Nombre maximum de doigts autorisés
- */
 const MAX_FINGERS = 10;
 
 /**
  * Interface de retour du hook useFingerChooser
  */
 interface UseFingerChooser {
-  // État
   status: FingerChooserStatus;
   activeFingers: Map<number, FingerToken>;
   timeLeft: number;
   winnerPointerId: number | null;
   winnerFinger: FingerToken | null;
-
-  // Handlers pour les événements pointer
-  handlePointerDown: (e: React.PointerEvent) => void;
-  handlePointerMove: (e: React.PointerEvent) => void;
-  handlePointerUp: (e: React.PointerEvent) => void;
-  handlePointerCancel: (e: React.PointerEvent) => void;
-
-  // Actions
+  handlePointerDown: (e: PointerEvent) => void;
+  handlePointerMove: (e: PointerEvent) => void;
+  handlePointerUp: (e: PointerEvent) => void;
   reset: () => void;
 }
 
 /**
- * Hook personnalisé pour gérer la logique du jeu Finger Chooser
- *
- * Gère :
- * - Le suivi multi-touch via Pointer Events
- * - Le décompte automatique quand >= 2 doigts
- * - Le tirage aléatoire du gagnant
- * - Le reset du jeu
+ * Store externe pour les positions des doigts (évite les re-renders React)
+ */
+class FingerStore {
+  private fingers = new Map<number, FingerToken>();
+  private listeners = new Set<() => void>();
+  private colorIndex = 0;
+
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  getSnapshot = () => this.fingers;
+
+  private notify = () => {
+    this.listeners.forEach((l) => l());
+  };
+
+  getNextColor = (): string => {
+    const color = FINGER_COLORS[this.colorIndex % FINGER_COLORS.length];
+    this.colorIndex++;
+    return color;
+  };
+
+  addFinger = (pointerId: number, x: number, y: number): boolean => {
+    if (this.fingers.size >= MAX_FINGERS) return false;
+    if (this.fingers.has(pointerId)) return false;
+
+    const newMap = new Map(this.fingers);
+    newMap.set(pointerId, {
+      pointerId,
+      x,
+      y,
+      color: this.getNextColor(),
+      startedAt: Date.now(),
+    });
+    this.fingers = newMap;
+    this.notify();
+    return true;
+  };
+
+  updateFinger = (pointerId: number, x: number, y: number) => {
+    const finger = this.fingers.get(pointerId);
+    if (!finger) return;
+
+    // Mise à jour directe sans créer de nouvelle Map si position identique
+    if (finger.x === x && finger.y === y) return;
+
+    const newMap = new Map(this.fingers);
+    newMap.set(pointerId, { ...finger, x, y });
+    this.fingers = newMap;
+    this.notify();
+  };
+
+  removeFinger = (pointerId: number) => {
+    if (!this.fingers.has(pointerId)) return;
+
+    const newMap = new Map(this.fingers);
+    newMap.delete(pointerId);
+    this.fingers = newMap;
+    this.notify();
+  };
+
+  clear = () => {
+    this.fingers = new Map();
+    this.colorIndex = 0;
+    this.notify();
+  };
+
+  get size() {
+    return this.fingers.size;
+  }
+}
+
+/**
+ * Hook personnalisé optimisé pour le jeu Finger Chooser
  */
 export const useFingerChooser = (): UseFingerChooser => {
   const [status, setStatus] = useState<FingerChooserStatus>("waiting");
-  const [activeFingers, setActiveFingers] = useState<Map<number, FingerToken>>(
-    new Map()
-  );
   const [timeLeft, setTimeLeft] = useState(COUNTDOWN_DURATION);
   const [winnerPointerId, setWinnerPointerId] = useState<number | null>(null);
 
-  // Ref pour l'interval du countdown
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Ref pour les couleurs assignées (persistant)
-  const colorIndexRef = useRef(0);
+  // Store externe pour les doigts (optimisation)
+  const storeRef = useRef<FingerStore | null>(null);
+  if (!storeRef.current) {
+    storeRef.current = new FingerStore();
+  }
+  const store = storeRef.current;
 
-  /**
-   * Obtient une couleur pour un nouveau doigt
-   */
-  const getNextColor = useCallback((): string => {
-    const color = FINGER_COLORS[colorIndexRef.current % FINGER_COLORS.length];
-    colorIndexRef.current++;
-    return color;
-  }, []);
+  // Sync avec le store externe
+  const activeFingers = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot
+  );
+
+  // Refs pour accès synchrone dans les handlers
+  const statusRef = useRef(status);
+  const winnerRef = useRef(winnerPointerId);
+  statusRef.current = status;
+  winnerRef.current = winnerPointerId;
+
+  // Ref pour l'interval
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /**
    * Démarre le décompte
    */
   const startCountdown = useCallback(() => {
-    if (countdownRef.current) return; // Déjà en cours
+    if (countdownRef.current) return;
 
     setStatus("countdown");
     setTimeLeft(COUNTDOWN_DURATION);
@@ -92,7 +153,6 @@ export const useFingerChooser = (): UseFingerChooser => {
     countdownRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Fin du décompte
           if (countdownRef.current) {
             clearInterval(countdownRef.current);
             countdownRef.current = null;
@@ -105,7 +165,7 @@ export const useFingerChooser = (): UseFingerChooser => {
   }, []);
 
   /**
-   * Arrête le décompte et reset
+   * Arrête le décompte
    */
   const stopCountdown = useCallback(() => {
     if (countdownRef.current) {
@@ -117,37 +177,28 @@ export const useFingerChooser = (): UseFingerChooser => {
   }, []);
 
   /**
-   * Choisit un gagnant aléatoirement parmi les doigts actifs
+   * Choisit un gagnant
    */
   const chooseWinner = useCallback(() => {
-    setActiveFingers((currentFingers) => {
-      const fingerIds = Array.from(currentFingers.keys());
-      if (fingerIds.length === 0) return currentFingers;
+    const fingerIds = Array.from(activeFingers.keys());
+    if (fingerIds.length === 0) return;
 
-      const randomIndex = Math.floor(Math.random() * fingerIds.length);
-      const winnerId = fingerIds[randomIndex];
+    const randomIndex = Math.floor(Math.random() * fingerIds.length);
+    const winnerId = fingerIds[randomIndex];
 
-      setWinnerPointerId(winnerId);
-      setStatus("chosen");
+    setWinnerPointerId(winnerId);
+    setStatus("chosen");
+  }, [activeFingers]);
 
-      return currentFingers;
-    });
-  }, []);
-
-  /**
-   * Effet pour gérer la fin du décompte
-   */
+  // Effet pour gérer la fin du décompte
   useEffect(() => {
     if (status === "countdown" && timeLeft === 0) {
       chooseWinner();
     }
   }, [status, timeLeft, chooseWinner]);
 
-  /**
-   * Effet pour gérer le nombre de doigts actifs
-   */
+  // Effet pour gérer le nombre de doigts
   useEffect(() => {
-    // Ne rien faire si déjà choisi
     if (status === "chosen") return;
 
     const fingerCount = activeFingers.size;
@@ -159,9 +210,7 @@ export const useFingerChooser = (): UseFingerChooser => {
     }
   }, [activeFingers.size, status, startCountdown, stopCountdown]);
 
-  /**
-   * Cleanup à la destruction du composant
-   */
+  // Cleanup
   useEffect(() => {
     return () => {
       if (countdownRef.current) {
@@ -171,108 +220,70 @@ export const useFingerChooser = (): UseFingerChooser => {
   }, []);
 
   /**
-   * Handler pour pointerdown
+   * Handler pointerdown - optimisé, pas de dépendance React
    */
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      // Ignorer les nouveaux doigts si le gagnant est déjà choisi
-      if (status === "chosen") return;
+  const handlePointerDown = useCallback((e: PointerEvent) => {
+    if (statusRef.current === "chosen") return;
 
-      const { pointerId, clientX, clientY } = e;
-
-      setActiveFingers((prev) => {
-        // Vérifier si on a atteint la limite de doigts
-        if (prev.size >= MAX_FINGERS) {
-          return prev; // Ne pas ajouter de nouveau doigt
-        }
-
-        // Capture le pointer pour un suivi fiable
-        try {
-          (e.target as HTMLElement).setPointerCapture(pointerId);
-        } catch {
-          // Ignore si la capture échoue
-        }
-
-        const newMap = new Map(prev);
-        newMap.set(pointerId, {
-          pointerId,
-          x: clientX,
-          y: clientY,
-          color: getNextColor(),
-          startedAt: Date.now(),
-        });
-        return newMap;
-      });
-    },
-    [status, getNextColor]
-  );
+    const { pointerId, clientX, clientY } = e;
+    store.addFinger(pointerId, clientX, clientY);
+  }, [store]);
 
   /**
-   * Handler pour pointermove
+   * Handler pointermove - optimisé avec RAF
    */
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+  const rafRef = useRef<Map<number, number>>(new Map());
+  
+  const handlePointerMove = useCallback((e: PointerEvent) => {
     const { pointerId, clientX, clientY } = e;
 
-    setActiveFingers((prev) => {
-      if (!prev.has(pointerId)) return prev;
+    // Annuler le RAF précédent pour ce pointer
+    const existingRaf = rafRef.current.get(pointerId);
+    if (existingRaf) {
+      cancelAnimationFrame(existingRaf);
+    }
 
-      const newMap = new Map(prev);
-      const finger = newMap.get(pointerId)!;
-      newMap.set(pointerId, {
-        ...finger,
-        x: clientX,
-        y: clientY,
-      });
-      return newMap;
+    // Programmer la mise à jour sur le prochain frame
+    const rafId = requestAnimationFrame(() => {
+      store.updateFinger(pointerId, clientX, clientY);
+      rafRef.current.delete(pointerId);
     });
-  }, []);
+    rafRef.current.set(pointerId, rafId);
+  }, [store]);
 
   /**
-   * Handler pour pointerup et pointercancel
+   * Handler pointerup
    */
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      const { pointerId } = e;
+  const handlePointerUp = useCallback((e: PointerEvent) => {
+    const { pointerId } = e;
 
-      // Relâche la capture
-      try {
-        (e.target as HTMLElement).releasePointerCapture(pointerId);
-      } catch {
-        // Ignore si déjà relâché
-      }
+    // Annuler tout RAF en attente
+    const existingRaf = rafRef.current.get(pointerId);
+    if (existingRaf) {
+      cancelAnimationFrame(existingRaf);
+      rafRef.current.delete(pointerId);
+    }
 
-      // Ne pas retirer le doigt gagnant après le choix
-      if (status === "chosen" && pointerId === winnerPointerId) {
-        return;
-      }
+    // Ne pas retirer le gagnant
+    if (statusRef.current === "chosen" && pointerId === winnerRef.current) {
+      return;
+    }
 
-      setActiveFingers((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(pointerId);
-        return newMap;
-      });
-    },
-    [status, winnerPointerId]
-  );
+    store.removeFinger(pointerId);
+  }, [store]);
 
   /**
-   * Reset complet du jeu
+   * Reset
    */
   const reset = useCallback(() => {
     stopCountdown();
-    setActiveFingers(new Map());
+    store.clear();
     setWinnerPointerId(null);
     setStatus("waiting");
-    colorIndexRef.current = 0;
-  }, [stopCountdown]);
+  }, [stopCountdown, store]);
 
-  /**
-   * Récupère le finger gagnant
-   */
   const winnerFinger =
-    winnerPointerId !== null
-      ? activeFingers.get(winnerPointerId) ?? null
-      : null;
+    winnerPointerId !== null ? activeFingers.get(winnerPointerId) ?? null : null;
 
   return {
     status,
@@ -283,7 +294,6 @@ export const useFingerChooser = (): UseFingerChooser => {
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    handlePointerCancel: handlePointerUp, // Même comportement
     reset,
   };
 };
