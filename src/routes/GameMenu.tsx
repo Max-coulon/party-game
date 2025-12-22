@@ -26,6 +26,13 @@ const availableGames: Game[] = [
     minPlayers: 2,
     icon: '🎭',
   },
+  {
+    id: 'finger-chooser',
+    name: 'Finger Chooser',
+    description: 'Qui sera désigné ?',
+    minPlayers: 0, // Pas besoin de joueurs enregistrés
+    icon: '👆',
+  },
 ];
 
 /**
@@ -38,7 +45,11 @@ export const GameMenu: React.FC = () => {
   const [showNoPlayerWarning, setShowNoPlayerWarning] = useState(false);
 
   const handleGameSelect = (gameId: string) => {
-    if (players.length === 0) {
+    // Trouver le jeu sélectionné
+    const game = availableGames.find(g => g.id === gameId);
+    
+    // Si le jeu nécessite des joueurs et qu'il n'y en a pas, afficher l'avertissement
+    if (game && game.minPlayers > 0 && players.length === 0) {
       setShowNoPlayerWarning(true);
       setIsPlayerModalOpen(true);
       return;

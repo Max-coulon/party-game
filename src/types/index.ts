@@ -209,3 +209,33 @@ export interface TodGameState {
   history: TodHistoryEntry[];
   playerStats: TodPlayerStats[];
 }
+
+// ============================================
+// Types pour le jeu "Finger Chooser" (Chwazi)
+// ============================================
+
+/**
+ * Représente un doigt/pointeur actif sur l'écran
+ */
+export interface FingerToken {
+  pointerId: number;
+  x: number;
+  y: number;
+  color: string;
+  startedAt: number;
+}
+
+/**
+ * État du jeu Finger Chooser
+ */
+export type FingerChooserStatus = "waiting" | "countdown" | "chosen";
+
+/**
+ * État complet du jeu Finger Chooser
+ */
+export interface FingerChooserState {
+  status: FingerChooserStatus;
+  activeFingers: Map<number, FingerToken>;
+  timeLeft: number; // Secondes restantes (5 → 0)
+  winnerPointerId: number | null;
+}
