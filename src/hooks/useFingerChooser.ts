@@ -196,25 +196,22 @@ export const useFingerChooser = (): UseFingerChooser => {
   /**
    * Handler pour pointermove
    */
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      const { pointerId, clientX, clientY } = e;
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    const { pointerId, clientX, clientY } = e;
 
-      setActiveFingers((prev) => {
-        if (!prev.has(pointerId)) return prev;
+    setActiveFingers((prev) => {
+      if (!prev.has(pointerId)) return prev;
 
-        const newMap = new Map(prev);
-        const finger = newMap.get(pointerId)!;
-        newMap.set(pointerId, {
-          ...finger,
-          x: clientX,
-          y: clientY,
-        });
-        return newMap;
+      const newMap = new Map(prev);
+      const finger = newMap.get(pointerId)!;
+      newMap.set(pointerId, {
+        ...finger,
+        x: clientX,
+        y: clientY,
       });
-    },
-    []
-  );
+      return newMap;
+    });
+  }, []);
 
   /**
    * Handler pour pointerup et pointercancel
@@ -259,7 +256,9 @@ export const useFingerChooser = (): UseFingerChooser => {
    * Récupère le finger gagnant
    */
   const winnerFinger =
-    winnerPointerId !== null ? activeFingers.get(winnerPointerId) ?? null : null;
+    winnerPointerId !== null
+      ? activeFingers.get(winnerPointerId) ?? null
+      : null;
 
   return {
     status,
