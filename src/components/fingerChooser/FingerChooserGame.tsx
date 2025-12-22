@@ -40,14 +40,14 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
     gameArea.addEventListener("pointermove", handlePointerMove);
     gameArea.addEventListener("pointerup", handlePointerUp);
     gameArea.addEventListener("pointercancel", handlePointerUp);
-    gameArea.addEventListener("pointerleave", handlePointerUp);
+    // Note: on n'utilise PAS pointerleave car il peut être déclenché 
+    // incorrectement lors de multi-touch sur certains appareils
 
     return () => {
       gameArea.removeEventListener("pointerdown", handlePointerDown);
       gameArea.removeEventListener("pointermove", handlePointerMove);
       gameArea.removeEventListener("pointerup", handlePointerUp);
       gameArea.removeEventListener("pointercancel", handlePointerUp);
-      gameArea.removeEventListener("pointerleave", handlePointerUp);
     };
   }, [handlePointerDown, handlePointerMove, handlePointerUp]);
 

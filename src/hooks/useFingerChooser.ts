@@ -233,6 +233,17 @@ export const useFingerChooser = (): UseFingerChooser => {
       if (statusRef.current === "chosen") return;
 
       const { pointerId, clientX, clientY } = e;
+
+      // Capturer le pointer pour garantir la réception des événements
+      const target = e.target as HTMLElement;
+      if (target.setPointerCapture) {
+        try {
+          target.setPointerCapture(pointerId);
+        } catch {
+          // Ignore si la capture échoue
+        }
+      }
+
       store.addFinger(pointerId, clientX, clientY);
     },
     [store]
@@ -255,6 +266,16 @@ export const useFingerChooser = (): UseFingerChooser => {
   const handlePointerUp = useCallback(
     (e: PointerEvent) => {
       const { pointerId } = e;
+
+      // Relâcher la capture du pointer
+      const target = e.target as HTMLElement;
+      if (target.releasePointerCapture) {
+        try {
+          target.releasePointerCapture(pointerId);
+        } catch {
+          // Ignore si déjà relâché
+        }
+      }
 
       // Ne pas retirer le gagnant
       if (statusRef.current === "chosen" && pointerId === winnerRef.current) {
