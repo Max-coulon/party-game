@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useFingerChooser } from "@/hooks/useFingerChooser";
 import { FingerToken } from "./FingerToken";
 import { CountdownDisplay } from "./CountdownDisplay";
@@ -9,6 +9,9 @@ interface FingerChooserGameProps {
 
 const HEADER_HEIGHT = 56; // Hauteur du bandeau en pixels
 
+type GameMode = "simple" | "tournament";
+type TournamentPhase = "setup" | "round1" | "round2" | "final" | "winner";
+
 /**
  * Composant principal du jeu Finger Chooser
  * Gère la zone de jeu multi-touch en plein écran
@@ -17,12 +20,21 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
   onBack,
 }) => {
   const gameAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Mode de jeu
+  const [gameMode, setGameMode] = useState<GameMode | null>(null);
+  
+  // État du tournoi
+  const [tournamentPhase, setTournamentPhase] = useState<TournamentPhase>("setup");
+  const [finalists, setFinalists] = useState<string[]>([]);
+  const [tournamentWinner, setTournamentWinner] = useState<string | null>(null);
 
   const {
     status,
     activeFingers,
     timeLeft,
     winnerPointerId,
+    winnerFinger,
     reset,
     handlePointerDown,
     handlePointerMove,
@@ -85,6 +97,120 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
 
   const fingerCount = activeFingers.size;
 
+  // Gestion du tournoi - passer à la phase suivante
+  const handleTournamentNext = () => {
+    if (!winnerFinger) return;
+    
+    if (tournamentPhase === "round1") {
+      setFinalists([`Groupe 1: ${winnerFinger.color}`]);
+      setTournamentPhase("round2");
+      reset();
+    } else if (tournamentPhase === "round2") {
+      setFinalists(prev => [...prev, `Groupe 2: ${winnerFinger.color}`]);
+      setTournamentPhase("final");
+      reset();
+    } else if (tournamentPhase === "final") {
+      setTournamentWinner(winnerFinger.color);
+      setTournamentPhase("winner");
+    }
+  };
+
+  const resetTournament = () => {
+    setTournamentPhase("setup");
+    setFinalists([]);
+    setTournamentWinner(null);
+    setGameMode(null);
+    reset();
+  };
+
+  const getPhaseTitle = () => {
+    switch (tournamentPhase) {
+      case "round1": return "🏆 Tournoi - Groupe 1 (joueurs 1-5)";
+      case "round2": return "🏆 Tournoi - Groupe 2 (joueurs 6-10)";
+      case "final": return "🏆 FINALE - Les 2 qualifiés !";
+      default: return "Finger Chooser";
+    }
+  };
+
+  // Écran de sélection du mode
+  if (gameMode === null) {
+    return (
+      <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+        <header 
+          className="flex-shrink-0 flex items-center px-4 bg-dark-900/95 border-b border-dark-700 z-50"
+          style={{ height: HEADER_HEIGHT }}
+        >
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 border border-dark-600 text-white font-medium active:scale-95 transition-all duration-200"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Retour</span>
+          </button>
+          <h1 className="ml-4 text-lg font-semibold text-white">Finger Chooser</h1>
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-4">
+            Choisir le mode
+          </h2>
+          
+          <button
+            onClick={() => setGameMode("simple")}
+            className="w-full max-w-sm p-6 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg"
+          >
+            <div className="text-4xl mb-2">👆</div>
+            <div className="text-xl font-bold">Mode Simple</div>
+            <div className="text-primary-200 text-sm mt-1">2-5 joueurs (limite écran)</div>
+          </button>
+
+          <button
+            onClick={() => { setGameMode("tournament"); setTournamentPhase("round1"); }}
+            className="w-full max-w-sm p-6 rounded-2xl bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg"
+          >
+            <div className="text-4xl mb-2">🏆</div>
+            <div className="text-xl font-bold">Mode Tournoi</div>
+            <div className="text-yellow-200 text-sm mt-1">6-10 joueurs (2 groupes + finale)</div>
+          </button>
+
+          <p className="text-dark-400 text-center text-sm mt-4 max-w-sm">
+            💡 L'iPhone limite à 5 doigts simultanés.<br/>
+            Le mode Tournoi permet de jouer à 10 !
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Écran du gagnant final du tournoi
+  if (gameMode === "tournament" && tournamentPhase === "winner") {
+    return (
+      <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
+          <div className="text-8xl animate-bounce">🏆</div>
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center">
+            Vainqueur du Tournoi !
+          </h2>
+          <div 
+            className="w-32 h-32 rounded-full shadow-2xl animate-pulse"
+            style={{ 
+              backgroundColor: tournamentWinner || "#fff",
+              boxShadow: `0 0 60px 20px ${tournamentWinner}80`
+            }}
+          />
+          <button
+            onClick={resetTournament}
+            className="mt-8 px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-xl font-bold rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
+          >
+            🔄 Nouveau tournoi
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
       {/* Bandeau de retour - HORS zone de jeu */}
@@ -93,7 +219,7 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
         style={{ height: HEADER_HEIGHT }}
       >
         <button
-          onClick={onBack}
+          onClick={gameMode === "tournament" ? resetTournament : onBack}
           className="
             flex items-center gap-2
             px-4 py-2 rounded-xl
@@ -120,8 +246,28 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
           </svg>
           <span>Retour</span>
         </button>
-        <h1 className="ml-4 text-lg font-semibold text-white">Finger Chooser</h1>
+        <h1 className="ml-4 text-lg font-semibold text-white">
+          {gameMode === "tournament" ? getPhaseTitle() : "Finger Chooser"}
+        </h1>
       </header>
+
+      {/* Indicateur des finalistes (mode tournoi) */}
+      {gameMode === "tournament" && finalists.length > 0 && tournamentPhase !== "final" && (
+        <div className="bg-yellow-600/20 border-b border-yellow-600/50 px-4 py-2 flex items-center justify-center gap-4">
+          <span className="text-yellow-300 text-sm font-medium">
+            🏅 Qualifiés: {finalists.length}/2
+          </span>
+          {finalists.map((f, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <div 
+                className="w-4 h-4 rounded-full" 
+                style={{ backgroundColor: f.split(": ")[1] }}
+              />
+              <span className="text-yellow-200 text-xs">{f.split(": ")[0]}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Zone de jeu - reçoit tous les événements tactiles */}
       <div
@@ -163,10 +309,18 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
                 </span>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-white">
-                Posez vos doigts !
+                {gameMode === "tournament" && tournamentPhase === "round1" && "Groupe 1 - Posez vos doigts !"}
+                {gameMode === "tournament" && tournamentPhase === "round2" && "Groupe 2 - Posez vos doigts !"}
+                {gameMode === "tournament" && tournamentPhase === "final" && "FINALE - Les 2 qualifiés !"}
+                {gameMode === "simple" && "Posez vos doigts !"}
               </h2>
               <p className="text-dark-300 text-lg md:text-xl">
-                2 à 10 joueurs maximum
+                {gameMode === "tournament" 
+                  ? tournamentPhase === "final" 
+                    ? "Les 2 qualifiés s'affrontent !" 
+                    : "Jusqu'à 5 joueurs par groupe"
+                  : "Limite selon votre écran (souvent 5 max)"
+                }
               </p>
             </div>
           </div>
@@ -205,39 +359,60 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
             <div className="px-8 py-4 bg-gradient-to-r from-green-600/90 to-green-500/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-green-500/30">
               <span className="text-white text-2xl md:text-3xl font-bold flex items-center gap-3">
                 <span className="text-4xl">🎉</span>
-                Tu es choisi !
+                {gameMode === "tournament" && tournamentPhase !== "final" 
+                  ? "Qualifié pour la finale !" 
+                  : gameMode === "tournament" && tournamentPhase === "final"
+                    ? "Champion !"
+                    : "Tu es choisi !"}
                 <span className="text-4xl">🎉</span>
               </span>
             </div>
           </div>
         )}
 
-        {/* Bouton Recommencer (après choix) */}
+        {/* Boutons après choix */}
         {status === "chosen" && (
-          <div className="absolute bottom-8 left-0 right-0 flex justify-center z-50 pointer-events-none">
-            <button
-              onClick={reset}
-              className="
-                px-8 py-4
-                bg-gradient-to-r from-primary-600 to-primary-700
-                hover:from-primary-700 hover:to-primary-800
-                active:from-primary-800 active:to-primary-900
-                text-white text-xl font-bold
-                rounded-2xl
-                shadow-lg shadow-primary-500/30
-                transition-all duration-300
-                transform hover:scale-105 active:scale-95
-                animate-fade-in
-                pointer-events-auto
-              "
-              style={{ touchAction: "manipulation" }}
-              aria-label="Recommencer le tirage"
-            >
-              <div className="flex items-center gap-3">
-                <span>🔄</span>
-                <span>Recommencer</span>
-              </div>
-            </button>
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 z-50 pointer-events-none">
+            {/* Mode simple : juste recommencer */}
+            {gameMode === "simple" && (
+              <button
+                onClick={reset}
+                className="px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-xl font-bold rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 animate-fade-in pointer-events-auto"
+                style={{ touchAction: "manipulation" }}
+              >
+                <div className="flex items-center gap-3">
+                  <span>🔄</span>
+                  <span>Recommencer</span>
+                </div>
+              </button>
+            )}
+
+            {/* Mode tournoi : passer au round suivant */}
+            {gameMode === "tournament" && (
+              <>
+                <button
+                  onClick={reset}
+                  className="px-6 py-4 bg-dark-700 hover:bg-dark-600 text-white font-bold rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 animate-fade-in pointer-events-auto"
+                  style={{ touchAction: "manipulation" }}
+                >
+                  🔄 Refaire
+                </button>
+                <button
+                  onClick={handleTournamentNext}
+                  className="px-8 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white text-xl font-bold rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 animate-fade-in pointer-events-auto"
+                  style={{ touchAction: "manipulation" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span>➡️</span>
+                    <span>
+                      {tournamentPhase === "round1" && "Groupe 2"}
+                      {tournamentPhase === "round2" && "Finale !"}
+                      {tournamentPhase === "final" && "Voir le champion"}
+                    </span>
+                  </div>
+                </button>
+              </>
+            )}
           </div>
         )}
 
