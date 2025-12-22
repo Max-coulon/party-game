@@ -1,4 +1,10 @@
-import { useState, useCallback, useRef, useEffect, useSyncExternalStore } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 import { FingerToken, FingerChooserStatus } from "@/types";
 
 /**
@@ -222,55 +228,64 @@ export const useFingerChooser = (): UseFingerChooser => {
   /**
    * Handler pointerdown - optimisé, pas de dépendance React
    */
-  const handlePointerDown = useCallback((e: PointerEvent) => {
-    if (statusRef.current === "chosen") return;
+  const handlePointerDown = useCallback(
+    (e: PointerEvent) => {
+      if (statusRef.current === "chosen") return;
 
-    const { pointerId, clientX, clientY } = e;
-    store.addFinger(pointerId, clientX, clientY);
-  }, [store]);
+      const { pointerId, clientX, clientY } = e;
+      store.addFinger(pointerId, clientX, clientY);
+    },
+    [store]
+  );
 
   /**
    * Handler pointermove - optimisé avec RAF
    */
   const rafRef = useRef<Map<number, number>>(new Map());
-  
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    const { pointerId, clientX, clientY } = e;
 
-    // Annuler le RAF précédent pour ce pointer
-    const existingRaf = rafRef.current.get(pointerId);
-    if (existingRaf) {
-      cancelAnimationFrame(existingRaf);
-    }
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
+      const { pointerId, clientX, clientY } = e;
 
-    // Programmer la mise à jour sur le prochain frame
-    const rafId = requestAnimationFrame(() => {
-      store.updateFinger(pointerId, clientX, clientY);
-      rafRef.current.delete(pointerId);
-    });
-    rafRef.current.set(pointerId, rafId);
-  }, [store]);
+      // Annuler le RAF précédent pour ce pointer
+      const existingRaf = rafRef.current.get(pointerId);
+      if (existingRaf) {
+        cancelAnimationFrame(existingRaf);
+      }
+
+      // Programmer la mise à jour sur le prochain frame
+      const rafId = requestAnimationFrame(() => {
+        store.updateFinger(pointerId, clientX, clientY);
+        rafRef.current.delete(pointerId);
+      });
+      rafRef.current.set(pointerId, rafId);
+    },
+    [store]
+  );
 
   /**
    * Handler pointerup
    */
-  const handlePointerUp = useCallback((e: PointerEvent) => {
-    const { pointerId } = e;
+  const handlePointerUp = useCallback(
+    (e: PointerEvent) => {
+      const { pointerId } = e;
 
-    // Annuler tout RAF en attente
-    const existingRaf = rafRef.current.get(pointerId);
-    if (existingRaf) {
-      cancelAnimationFrame(existingRaf);
-      rafRef.current.delete(pointerId);
-    }
+      // Annuler tout RAF en attente
+      const existingRaf = rafRef.current.get(pointerId);
+      if (existingRaf) {
+        cancelAnimationFrame(existingRaf);
+        rafRef.current.delete(pointerId);
+      }
 
-    // Ne pas retirer le gagnant
-    if (statusRef.current === "chosen" && pointerId === winnerRef.current) {
-      return;
-    }
+      // Ne pas retirer le gagnant
+      if (statusRef.current === "chosen" && pointerId === winnerRef.current) {
+        return;
+      }
 
-    store.removeFinger(pointerId);
-  }, [store]);
+      store.removeFinger(pointerId);
+    },
+    [store]
+  );
 
   /**
    * Reset
@@ -283,7 +298,9 @@ export const useFingerChooser = (): UseFingerChooser => {
   }, [stopCountdown, store]);
 
   const winnerFinger =
-    winnerPointerId !== null ? activeFingers.get(winnerPointerId) ?? null : null;
+    winnerPointerId !== null
+      ? activeFingers.get(winnerPointerId) ?? null
+      : null;
 
   return {
     status,
