@@ -24,6 +24,11 @@ const FINGER_COLORS = [
 const COUNTDOWN_DURATION = 5;
 
 /**
+ * Nombre maximum de doigts autorisés
+ */
+const MAX_FINGERS = 10;
+
+/**
  * Interface de retour du hook useFingerChooser
  */
 interface UseFingerChooser {
@@ -175,10 +180,19 @@ export const useFingerChooser = (): UseFingerChooser => {
 
       const { pointerId, clientX, clientY } = e;
 
-      // Capture le pointer pour un suivi fiable
-      (e.target as HTMLElement).setPointerCapture(pointerId);
-
       setActiveFingers((prev) => {
+        // Vérifier si on a atteint la limite de doigts
+        if (prev.size >= MAX_FINGERS) {
+          return prev; // Ne pas ajouter de nouveau doigt
+        }
+
+        // Capture le pointer pour un suivi fiable
+        try {
+          (e.target as HTMLElement).setPointerCapture(pointerId);
+        } catch {
+          // Ignore si la capture échoue
+        }
+
         const newMap = new Map(prev);
         newMap.set(pointerId, {
           pointerId,

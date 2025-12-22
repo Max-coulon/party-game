@@ -142,7 +142,7 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
               Posez vos doigts !
             </h2>
             <p className="text-dark-300 text-lg md:text-xl">
-              Minimum 2 doigts pour lancer le tirage
+              2 à 10 joueurs maximum
             </p>
           </div>
         </div>
@@ -193,9 +193,24 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
         <div
           className="absolute bottom-8 left-0 right-0 flex justify-center z-50"
           style={{ touchAction: "manipulation" }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
         >
           <button
-            onClick={reset}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              reset();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              reset();
+            }}
             className="
               px-8 py-4
               bg-gradient-to-r from-primary-600 to-primary-700
