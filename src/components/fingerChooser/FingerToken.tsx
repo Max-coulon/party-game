@@ -5,6 +5,7 @@ interface FingerTokenProps {
   finger: FingerTokenType;
   isWinner: boolean;
   isChosen: boolean; // Le jeu a choisi un gagnant
+  headerOffset?: number; // Décalage Y pour le header
 }
 
 /**
@@ -16,6 +17,7 @@ export const FingerToken: React.FC<FingerTokenProps> = ({
   finger,
   isWinner,
   isChosen,
+  headerOffset = 0,
 }) => {
   const size = isWinner ? 120 : 80; // Taille plus grande pour le gagnant
   const halfSize = size / 2;
@@ -26,13 +28,12 @@ export const FingerToken: React.FC<FingerTokenProps> = ({
         absolute pointer-events-none
         rounded-full
         flex items-center justify-center
-        transition-all duration-300
         ${isChosen && !isWinner ? "opacity-30 scale-75" : "opacity-100"}
         ${isWinner ? "z-50" : "z-40"}
       `}
       style={{
         left: finger.x - halfSize,
-        top: finger.y - halfSize,
+        top: finger.y - halfSize - headerOffset,
         width: size,
         height: size,
         backgroundColor: finger.color,
@@ -43,6 +44,8 @@ export const FingerToken: React.FC<FingerTokenProps> = ({
           ? "4px solid white"
           : "3px solid rgba(255,255,255,0.5)",
         transform: isWinner ? "scale(1.2)" : "scale(1)",
+        transition: isWinner ? "transform 0.3s, opacity 0.3s" : "none",
+        willChange: "left, top",
       }}
     >
       {/* Icône centrale */}

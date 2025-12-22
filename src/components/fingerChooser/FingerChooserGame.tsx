@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect } from "react";
 import { useFingerChooser } from "@/hooks/useFingerChooser";
 import { FingerToken } from "./FingerToken";
 import { CountdownDisplay } from "./CountdownDisplay";
@@ -7,6 +7,8 @@ interface FingerChooserGameProps {
   onBack: () => void;
 }
 
+const HEADER_HEIGHT = 56; // Hauteur du bandeau en pixels
+
 /**
  * Composant principal du jeu Finger Chooser
  * Gère la zone de jeu multi-touch en plein écran
@@ -14,7 +16,7 @@ interface FingerChooserGameProps {
 export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
   onBack,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
 
   const {
     status,
@@ -28,253 +30,228 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
   } = useFingerChooser();
 
   /**
-   * Vérifie si l'événement provient d'un bouton
-   */
-  const isButtonEvent = useCallback((e: PointerEvent): boolean => {
-    const target = e.target as HTMLElement;
-    // Vérifie si le target ou un de ses parents est un bouton
-    return target.closest("button") !== null;
-  }, []);
-
-  /**
-   * Wrapper pour ignorer les événements sur les boutons
-   */
-  const wrappedPointerDown = useCallback((e: PointerEvent) => {
-    if (isButtonEvent(e)) return;
-    handlePointerDown(e);
-  }, [handlePointerDown, isButtonEvent]);
-
-  const wrappedPointerMove = useCallback((e: PointerEvent) => {
-    if (isButtonEvent(e)) return;
-    handlePointerMove(e);
-  }, [handlePointerMove, isButtonEvent]);
-
-  const wrappedPointerUp = useCallback((e: PointerEvent) => {
-    if (isButtonEvent(e)) return;
-    handlePointerUp(e);
-  }, [handlePointerUp, isButtonEvent]);
-
-  /**
    * Attacher les event listeners natifs pour le multi-touch
    */
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const gameArea = gameAreaRef.current;
+    if (!gameArea) return;
 
-    container.addEventListener("pointerdown", wrappedPointerDown);
-    container.addEventListener("pointermove", wrappedPointerMove);
-    container.addEventListener("pointerup", wrappedPointerUp);
-    container.addEventListener("pointercancel", wrappedPointerUp);
-    container.addEventListener("pointerleave", wrappedPointerUp);
+    gameArea.addEventListener("pointerdown", handlePointerDown);
+    gameArea.addEventListener("pointermove", handlePointerMove);
+    gameArea.addEventListener("pointerup", handlePointerUp);
+    gameArea.addEventListener("pointercancel", handlePointerUp);
+    gameArea.addEventListener("pointerleave", handlePointerUp);
 
     return () => {
-      container.removeEventListener("pointerdown", wrappedPointerDown);
-      container.removeEventListener("pointermove", wrappedPointerMove);
-      container.removeEventListener("pointerup", wrappedPointerUp);
-      container.removeEventListener("pointercancel", wrappedPointerUp);
-      container.removeEventListener("pointerleave", wrappedPointerUp);
+      gameArea.removeEventListener("pointerdown", handlePointerDown);
+      gameArea.removeEventListener("pointermove", handlePointerMove);
+      gameArea.removeEventListener("pointerup", handlePointerUp);
+      gameArea.removeEventListener("pointercancel", handlePointerUp);
+      gameArea.removeEventListener("pointerleave", handlePointerUp);
     };
-  }, [wrappedPointerDown, wrappedPointerMove, wrappedPointerUp]);
+  }, [handlePointerDown, handlePointerMove, handlePointerUp]);
 
   /**
    * Empêcher les comportements par défaut du navigateur
    * (scroll, zoom, gestes) sur la zone de jeu
    */
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const gameArea = gameAreaRef.current;
+    if (!gameArea) return;
 
-    const preventDefault = (e: TouchEvent) => {
-      // Ne pas bloquer les touches sur les boutons
-      const target = e.target as HTMLElement;
-      if (target.closest("button")) return;
-      e.preventDefault();
-    };
-
-    const preventAll = (e: Event) => {
+    const preventDefault = (e: Event) => {
       e.preventDefault();
     };
 
     // Empêcher le scroll/zoom tactile
-    container.addEventListener("touchstart", preventDefault, { passive: false });
-    container.addEventListener("touchmove", preventDefault, { passive: false });
-    container.addEventListener("touchend", preventDefault, { passive: false });
+    gameArea.addEventListener("touchstart", preventDefault, { passive: false });
+    gameArea.addEventListener("touchmove", preventDefault, { passive: false });
+    gameArea.addEventListener("touchend", preventDefault, { passive: false });
 
     // Empêcher le menu contextuel (long press)
-    container.addEventListener("contextmenu", preventAll);
+    gameArea.addEventListener("contextmenu", preventDefault);
 
     // Empêcher la sélection de texte
-    container.addEventListener("selectstart", preventAll);
+    gameArea.addEventListener("selectstart", preventDefault);
 
     return () => {
-      container.removeEventListener("touchstart", preventDefault);
-      container.removeEventListener("touchmove", preventDefault);
-      container.removeEventListener("touchend", preventDefault);
-      container.removeEventListener("contextmenu", preventAll);
-      container.removeEventListener("selectstart", preventAll);
+      gameArea.removeEventListener("touchstart", preventDefault);
+      gameArea.removeEventListener("touchmove", preventDefault);
+      gameArea.removeEventListener("touchend", preventDefault);
+      gameArea.removeEventListener("contextmenu", preventDefault);
+      gameArea.removeEventListener("selectstart", preventDefault);
     };
   }, []);
 
   const fingerCount = activeFingers.size;
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950 touch-none select-none overflow-hidden"
-      style={{
-        // Empêcher les comportements tactiles par défaut
-        touchAction: "none",
-        WebkitTouchCallout: "none",
-        WebkitUserSelect: "none",
-        userSelect: "none",
-      }}
-    >
-      {/* Effet de fond animé */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600/20 rounded-full blur-3xl animate-pulse" />
-        <div
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
-        />
-      </div>
-
-      {/* Bouton retour (toujours visible en haut) */}
-      <button
-        onClick={onBack}
-        className="
-          absolute top-4 left-4 z-50
-          p-3 rounded-xl
-          bg-dark-800/80 backdrop-blur-sm
-          border border-dark-600
-          text-white
-          hover:bg-dark-700 active:scale-95
-          transition-all duration-200
-          touch-auto
-        "
-        style={{ touchAction: "manipulation" }}
-        aria-label="Retour au menu"
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+      {/* Bandeau de retour - HORS zone de jeu */}
+      <header 
+        className="flex-shrink-0 flex items-center px-4 bg-dark-900/95 border-b border-dark-700 z-50"
+        style={{ height: HEADER_HEIGHT }}
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <button
+          onClick={onBack}
+          className="
+            flex items-center gap-2
+            px-4 py-2 rounded-xl
+            bg-dark-800 hover:bg-dark-700
+            border border-dark-600
+            text-white font-medium
+            active:scale-95
+            transition-all duration-200
+          "
+          aria-label="Retour au menu"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2.5}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-      </button>
-
-      {/* Instructions (état waiting) */}
-      {status === "waiting" && fingerCount === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
-          <div className="text-center space-y-4 px-8 animate-fade-in">
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-6xl md:text-7xl animate-bounce">👆</span>
-              <span
-                className="text-6xl md:text-7xl animate-bounce"
-                style={{ animationDelay: "0.1s" }}
-              >
-                👆
-              </span>
-              <span
-                className="text-6xl md:text-7xl animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              >
-                👆
-              </span>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
-              Posez vos doigts !
-            </h2>
-            <p className="text-dark-300 text-lg md:text-xl">
-              2 à 10 joueurs maximum
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Indicateur nombre de doigts (état waiting avec doigts) */}
-      {status === "waiting" && fingerCount > 0 && fingerCount < 2 && (
-        <div className="absolute top-20 left-0 right-0 flex justify-center pointer-events-none z-20">
-          <div className="px-6 py-3 bg-yellow-500/20 backdrop-blur-sm rounded-full border border-yellow-500/50 animate-pulse">
-            <span className="text-yellow-300 font-semibold">
-              ⚠️ {fingerCount} doigt{fingerCount > 1 ? "s" : ""} - Il en faut au
-              moins 2
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Indicateur countdown actif */}
-      {status === "countdown" && (
-        <div className="absolute top-20 left-0 right-0 flex justify-center pointer-events-none z-20">
-          <div className="px-6 py-3 bg-primary-500/20 backdrop-blur-sm rounded-full border border-primary-500/50">
-            <span className="text-primary-300 font-semibold">
-              ✋ {fingerCount} doigt{fingerCount > 1 ? "s" : ""} détecté
-              {fingerCount > 1 ? "s" : ""}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Countdown Display */}
-      <CountdownDisplay timeLeft={timeLeft} isVisible={status === "countdown"} />
-
-      {/* Message gagnant */}
-      {status === "chosen" && (
-        <div className="absolute bottom-32 left-0 right-0 flex justify-center pointer-events-none z-40 animate-slide-up">
-          <div className="px-8 py-4 bg-gradient-to-r from-green-600/90 to-green-500/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-green-500/30">
-            <span className="text-white text-2xl md:text-3xl font-bold flex items-center gap-3">
-              <span className="text-4xl">🎉</span>
-              Tu es choisi !
-              <span className="text-4xl">🎉</span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Bouton Recommencer (après choix) */}
-      {status === "chosen" && (
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center z-50">
-          <button
-            onClick={reset}
-            className="
-              px-8 py-4
-              bg-gradient-to-r from-primary-600 to-primary-700
-              hover:from-primary-700 hover:to-primary-800
-              active:from-primary-800 active:to-primary-900
-              text-white text-xl font-bold
-              rounded-2xl
-              shadow-lg shadow-primary-500/30
-              transition-all duration-300
-              transform hover:scale-105 active:scale-95
-              animate-fade-in
-            "
-            style={{ touchAction: "manipulation" }}
-            aria-label="Recommencer le tirage"
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <div className="flex items-center gap-3">
-              <span>🔄</span>
-              <span>Recommencer</span>
-            </div>
-          </button>
-        </div>
-      )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          <span>Retour</span>
+        </button>
+        <h1 className="ml-4 text-lg font-semibold text-white">Finger Chooser</h1>
+      </header>
 
-      {/* Rendu des tokens de doigts */}
-      {Array.from(activeFingers.values()).map((finger) => (
-        <FingerToken
-          key={finger.pointerId}
-          finger={finger}
-          isWinner={finger.pointerId === winnerPointerId}
-          isChosen={status === "chosen"}
-        />
-      ))}
+      {/* Zone de jeu - reçoit tous les événements tactiles */}
+      <div
+        ref={gameAreaRef}
+        className="flex-1 relative touch-none select-none overflow-hidden"
+        style={{
+          touchAction: "none",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+        }}
+      >
+        {/* Effet de fond animé */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600/20 rounded-full blur-3xl animate-pulse" />
+          <div
+            className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "1s" }}
+          />
+        </div>
+
+        {/* Instructions (état waiting) */}
+        {status === "waiting" && fingerCount === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+            <div className="text-center space-y-4 px-8 animate-fade-in">
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-6xl md:text-7xl animate-bounce">👆</span>
+                <span
+                  className="text-6xl md:text-7xl animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                >
+                  👆
+                </span>
+                <span
+                  className="text-6xl md:text-7xl animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                >
+                  👆
+                </span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
+                Posez vos doigts !
+              </h2>
+              <p className="text-dark-300 text-lg md:text-xl">
+                2 à 10 joueurs maximum
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Indicateur nombre de doigts (état waiting avec doigts) */}
+        {status === "waiting" && fingerCount > 0 && fingerCount < 2 && (
+          <div className="absolute top-4 left-0 right-0 flex justify-center pointer-events-none z-20">
+            <div className="px-6 py-3 bg-yellow-500/20 backdrop-blur-sm rounded-full border border-yellow-500/50 animate-pulse">
+              <span className="text-yellow-300 font-semibold">
+                ⚠️ {fingerCount} doigt{fingerCount > 1 ? "s" : ""} - Il en faut au
+                moins 2
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Indicateur countdown actif */}
+        {status === "countdown" && (
+          <div className="absolute top-4 left-0 right-0 flex justify-center pointer-events-none z-20">
+            <div className="px-6 py-3 bg-primary-500/20 backdrop-blur-sm rounded-full border border-primary-500/50">
+              <span className="text-primary-300 font-semibold">
+                ✋ {fingerCount} doigt{fingerCount > 1 ? "s" : ""} détecté
+                {fingerCount > 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Countdown Display */}
+        <CountdownDisplay timeLeft={timeLeft} isVisible={status === "countdown"} />
+
+        {/* Message gagnant */}
+        {status === "chosen" && (
+          <div className="absolute bottom-32 left-0 right-0 flex justify-center pointer-events-none z-40 animate-slide-up">
+            <div className="px-8 py-4 bg-gradient-to-r from-green-600/90 to-green-500/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-green-500/30">
+              <span className="text-white text-2xl md:text-3xl font-bold flex items-center gap-3">
+                <span className="text-4xl">🎉</span>
+                Tu es choisi !
+                <span className="text-4xl">🎉</span>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Bouton Recommencer (après choix) */}
+        {status === "chosen" && (
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center z-50 pointer-events-none">
+            <button
+              onClick={reset}
+              className="
+                px-8 py-4
+                bg-gradient-to-r from-primary-600 to-primary-700
+                hover:from-primary-700 hover:to-primary-800
+                active:from-primary-800 active:to-primary-900
+                text-white text-xl font-bold
+                rounded-2xl
+                shadow-lg shadow-primary-500/30
+                transition-all duration-300
+                transform hover:scale-105 active:scale-95
+                animate-fade-in
+                pointer-events-auto
+              "
+              style={{ touchAction: "manipulation" }}
+              aria-label="Recommencer le tirage"
+            >
+              <div className="flex items-center gap-3">
+                <span>🔄</span>
+                <span>Recommencer</span>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Rendu des tokens de doigts */}
+        {Array.from(activeFingers.values()).map((finger) => (
+          <FingerToken
+            key={finger.pointerId}
+            finger={finger}
+            isWinner={finger.pointerId === winnerPointerId}
+            isChosen={status === "chosen"}
+            headerOffset={HEADER_HEIGHT}
+          />
+        ))}
+      </div>
     </div>
   );
 };

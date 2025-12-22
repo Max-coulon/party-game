@@ -239,26 +239,12 @@ export const useFingerChooser = (): UseFingerChooser => {
   );
 
   /**
-   * Handler pointermove - optimisé avec RAF
+   * Handler pointermove - mise à jour instantanée
    */
-  const rafRef = useRef<Map<number, number>>(new Map());
-
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
       const { pointerId, clientX, clientY } = e;
-
-      // Annuler le RAF précédent pour ce pointer
-      const existingRaf = rafRef.current.get(pointerId);
-      if (existingRaf) {
-        cancelAnimationFrame(existingRaf);
-      }
-
-      // Programmer la mise à jour sur le prochain frame
-      const rafId = requestAnimationFrame(() => {
-        store.updateFinger(pointerId, clientX, clientY);
-        rafRef.current.delete(pointerId);
-      });
-      rafRef.current.set(pointerId, rafId);
+      store.updateFinger(pointerId, clientX, clientY);
     },
     [store]
   );
@@ -269,13 +255,6 @@ export const useFingerChooser = (): UseFingerChooser => {
   const handlePointerUp = useCallback(
     (e: PointerEvent) => {
       const { pointerId } = e;
-
-      // Annuler tout RAF en attente
-      const existingRaf = rafRef.current.get(pointerId);
-      if (existingRaf) {
-        cancelAnimationFrame(existingRaf);
-        rafRef.current.delete(pointerId);
-      }
 
       // Ne pas retirer le gagnant
       if (statusRef.current === "chosen" && pointerId === winnerRef.current) {
