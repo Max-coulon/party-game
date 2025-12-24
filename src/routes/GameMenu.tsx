@@ -27,6 +27,13 @@ const availableGames: Game[] = [
     icon: '🎭',
   },
   {
+    id: 'times-up',
+    name: 'Time\'s Up',
+    description: 'Faites deviner en 3 manches !',
+    minPlayers: 0, // Gestion d'équipes interne
+    icon: '⏱️',
+  },
+  {
     id: 'finger-chooser',
     name: 'Finger Chooser',
     description: 'Qui sera désigné ?',

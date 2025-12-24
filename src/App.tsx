@@ -4,6 +4,7 @@ import { GameMenu } from '@/routes/GameMenu';
 import { NeverHaveIEverScreen } from '@/routes/NeverHaveIEverScreen';
 import { TruthOrDareScreen } from '@/routes/TruthOrDareScreen';
 import { FingerChooserScreen } from '@/routes/FingerChooserScreen';
+import { TimesUpScreen } from '@/routes/TimesUpScreen';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 /**
@@ -19,6 +20,7 @@ function App() {
           <Route path="/game/never-have-i-ever" element={<NeverHaveIEverScreen />} />
           <Route path="/game/truth-or-dare" element={<TruthOrDareScreen />} />
           <Route path="/game/finger-chooser" element={<FingerChooserScreen />} />
+          <Route path="/game/times-up" element={<TimesUpScreen />} />
         </Routes>
         <PwaInstallPrompt />
       </BrowserRouter>

@@ -239,3 +239,99 @@ export interface FingerChooserState {
   timeLeft: number; // Secondes restantes (5 → 0)
   winnerPointerId: number | null;
 }
+
+// ============================================
+// Types pour le jeu "Time's Up"
+// ============================================
+
+/**
+ * Représente une équipe dans le jeu Time's Up
+ */
+export interface TimesUpTeam {
+  id: string;
+  name: string;
+  color: string;
+  scores: number[]; // Score par manche [manche1, manche2, manche3]
+}
+
+/**
+ * Représente une carte/mot dans le jeu Time's Up
+ */
+export interface TimesUpCard {
+  id: string;
+  word: string;
+  isCustom?: boolean;
+}
+
+/**
+ * Phases du jeu Time's Up
+ */
+export type TimesUpPhase = "setup" | "round" | "turn" | "roundEnd" | "summary";
+
+/**
+ * Numéro de manche (1, 2 ou 3)
+ */
+export type TimesUpRoundNumber = 1 | 2 | 3;
+
+/**
+ * Labels des manches
+ */
+export const TIMES_UP_ROUND_LABELS: Record<TimesUpRoundNumber, { name: string; description: string; icon: string }> = {
+  1: { name: "Description libre", description: "Décris avec autant de mots que tu veux !", icon: "🗣️" },
+  2: { name: "Un seul mot", description: "Un seul mot pour faire deviner !", icon: "☝️" },
+  3: { name: "Mime", description: "Mime sans parler !", icon: "🎭" },
+};
+
+/**
+ * Configuration de la partie Time's Up
+ */
+export interface TimesUpGameConfig {
+  teams: TimesUpTeam[];
+  turnDuration: number; // Durée d'un tour en secondes (30, 45, 60)
+  allowSkip: boolean; // Autoriser le bouton "Passer"
+  maxSkipsPerTurn: number; // Nombre max de passes par tour (0 = illimité si allowSkip)
+  cards: TimesUpCard[]; // Paquet de cartes initial
+}
+
+/**
+ * État d'un tour actif
+ */
+export interface TimesUpTurnState {
+  isActive: boolean;
+  timeLeft: number;
+  currentCardIndex: number;
+  skipsUsed: number;
+  cardsFoundThisTurn: string[]; // IDs des cartes trouvées ce tour
+}
+
+/**
+ * État complet du jeu Time's Up
+ */
+export interface TimesUpGameState {
+  phase: TimesUpPhase;
+  config: TimesUpGameConfig;
+  currentRound: TimesUpRoundNumber;
+  currentTeamIndex: number;
+  teams: TimesUpTeam[];
+  
+  // Deck management
+  originalDeck: TimesUpCard[]; // Deck original (mélangé une fois)
+  currentDeck: TimesUpCard[]; // Cartes restantes dans la manche en cours
+  foundCardsThisRound: TimesUpCard[]; // Cartes trouvées dans la manche
+  
+  // Tour actif
+  turn: TimesUpTurnState;
+  
+  // Historique
+  isGameStarted: boolean;
+  isGameFinished: boolean;
+}
+
+/**
+ * Résumé final du jeu Time's Up
+ */
+export interface TimesUpSummary {
+  teams: TimesUpTeam[];
+  winner: TimesUpTeam | null;
+  isTie: boolean;
+}
