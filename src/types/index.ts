@@ -355,13 +355,13 @@ export interface TimesUpSummary {
  * Les 7 variantes de Party Guess
  */
 export type PartyGuessVariant =
-  | "interdit"      // Taboo-like
-  | "mime"          // Mimer
-  | "oneWord"       // Un seul mot
-  | "lyrics"        // Finis les paroles
-  | "singIt"        // Chanter titre + artiste
-  | "celebrities"   // Célébrités
-  | "sports";       // Sport
+  | "interdit" // Taboo-like
+  | "mime" // Mimer
+  | "oneWord" // Un seul mot
+  | "lyrics" // Finis les paroles
+  | "singIt" // Chanter titre + artiste
+  | "celebrities" // Célébrités
+  | "sports"; // Sport
 
 /**
  * Infos sur chaque variante
@@ -508,15 +508,15 @@ export interface PartyGuessGameState {
   currentRoundVariant: PartyGuessVariant; // Variante de la manche en cours
   currentTeamIndex: number;
   teams: PartyGuessTeam[];
-  
+
   // Deck
   originalDeck: PartyGuessCard[];
   currentDeck: PartyGuessCard[];
   foundCardsThisRound: PartyGuessCard[];
-  
+
   // Tour
   turn: PartyGuessTurnState;
-  
+
   // État
   isGameStarted: boolean;
   isGameFinished: boolean;

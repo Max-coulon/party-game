@@ -200,9 +200,12 @@ export const usePartyGuessGame = (): UsePartyGuessGame => {
       // Préparer le deck pour la première manche
       const firstRound = config.rounds[0];
       let deck = shuffleArray(firstRound.cards);
-      
+
       // Limiter le nombre de cartes si configuré
-      if (firstRound.cardsPerRound > 0 && deck.length > firstRound.cardsPerRound) {
+      if (
+        firstRound.cardsPerRound > 0 &&
+        deck.length > firstRound.cardsPerRound
+      ) {
         deck = deck.slice(0, firstRound.cardsPerRound);
       }
 
@@ -384,9 +387,12 @@ export const usePartyGuessGame = (): UsePartyGuessGame => {
       // Récupérer la config de la nouvelle manche
       const nextRoundConfig = prev.config.rounds[nextRound - 1];
       let newDeck = shuffleArray(nextRoundConfig.cards);
-      
+
       // Limiter le nombre de cartes si configuré
-      if (nextRoundConfig.cardsPerRound > 0 && newDeck.length > nextRoundConfig.cardsPerRound) {
+      if (
+        nextRoundConfig.cardsPerRound > 0 &&
+        newDeck.length > nextRoundConfig.cardsPerRound
+      ) {
         newDeck = newDeck.slice(0, nextRoundConfig.cardsPerRound);
       }
 
@@ -494,9 +500,12 @@ export const usePartyGuessGame = (): UsePartyGuessGame => {
       // Récupérer la config de la première manche
       const firstRound = prev.config.rounds[0];
       let newDeck = shuffleArray(firstRound.cards);
-      
+
       // Limiter le nombre de cartes si configuré
-      if (firstRound.cardsPerRound > 0 && newDeck.length > firstRound.cardsPerRound) {
+      if (
+        firstRound.cardsPerRound > 0 &&
+        newDeck.length > firstRound.cardsPerRound
+      ) {
         newDeck = newDeck.slice(0, firstRound.cardsPerRound);
       }
 
