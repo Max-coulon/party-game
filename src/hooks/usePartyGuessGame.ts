@@ -1,30 +1,35 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
-  TimesUpGameState,
-  TimesUpGameConfig,
-  TimesUpTeam,
-  TimesUpCard,
-  TimesUpRoundNumber,
-  TimesUpSummary,
+  PartyGuessGameState,
+  PartyGuessGameConfig,
+  PartyGuessTeam,
+  PartyGuessCard,
+  PartyGuessVariant,
+  PartyGuessSummary,
 } from "@/types";
-import { shuffleArray } from "@/data/timesUpWords";
+import { shuffleArray } from "@/data/partyGuessData";
 
 /**
- * Clé localStorage pour la sauvegarde
+ * Clé localStorage
  */
-const STORAGE_KEY = "timesup-game-state";
+const STORAGE_KEY = "partyguess-game-state";
 
 /**
  * Interface de retour du hook
  */
-interface UseTimesUpGame {
+interface UsePartyGuessGame {
   // État
-  state: TimesUpGameState;
-  currentTeam: TimesUpTeam | null;
-  currentCard: TimesUpCard | null;
+  state: PartyGuessGameState;
+  currentTeam: PartyGuessTeam | null;
+  currentCard: PartyGuessCard | null;
+
+  // Sélection variante
+  selectVariant: (variant: PartyGuessVariant) => void;
 
   // Actions de configuration
-  startGame: (config: TimesUpGameConfig) => void;
+  startGame: (config: PartyGuessGameConfig) => void;
+  goBackToSetup: () => void;
+  goBackToVariantPicker: () => void;
 
   // Actions de jeu
   startTurn: () => void;
@@ -32,16 +37,14 @@ interface UseTimesUpGame {
   skipCard: () => void;
   endTurn: () => void;
 
-  // Actions de manche
+  // Actions de manche/fin
   startNextRound: () => void;
-
-  // Actions de fin
   endGame: () => void;
   resetGame: () => void;
   replayGame: () => void;
 
   // Utilitaires
-  getSummary: () => TimesUpSummary;
+  getSummary: () => PartyGuessSummary;
   hasSavedGame: () => boolean;
   loadSavedGame: () => boolean;
   clearSavedGame: () => void;
@@ -50,16 +53,20 @@ interface UseTimesUpGame {
 /**
  * État initial
  */
-const INITIAL_STATE: TimesUpGameState = {
-  phase: "setup",
+const INITIAL_STATE: PartyGuessGameState = {
+  phase: "pickVariant",
   config: {
+    variants: [],
+    rounds: [],
     teams: [],
     turnDuration: 30,
     allowSkip: true,
     maxSkipsPerTurn: 3,
-    cards: [],
+    totalRounds: 1,
+    cardsPerRound: 0,
   },
   currentRound: 1,
+  currentRoundVariant: "interdit",
   currentTeamIndex: 0,
   teams: [],
   originalDeck: [],
@@ -68,7 +75,6 @@ const INITIAL_STATE: TimesUpGameState = {
   turn: {
     isActive: false,
     timeLeft: 30,
-    currentCardIndex: 0,
     skipsUsed: 0,
     cardsFoundThisTurn: [],
   },
@@ -77,10 +83,10 @@ const INITIAL_STATE: TimesUpGameState = {
 };
 
 /**
- * Hook principal pour gérer le jeu "Time's Up"
+ * Hook principal pour gérer le jeu "Party Guess"
  */
-export const useTimesUpGame = (): UseTimesUpGame => {
-  const [state, setState] = useState<TimesUpGameState>(INITIAL_STATE);
+export const usePartyGuessGame = (): UsePartyGuessGame => {
+  const [state, setState] = useState<PartyGuessGameState>(INITIAL_STATE);
   const timerRef = useRef<number | null>(null);
 
   /**
@@ -94,12 +100,15 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   const currentCard = state.currentDeck[0] || null;
 
   /**
-   * Sauvegarde l'état dans localStorage
+   * Sauvegarde dans localStorage
    */
-  const saveToStorage = useCallback((gameState: TimesUpGameState) => {
+  const saveToStorage = useCallback((gameState: PartyGuessGameState) => {
     try {
-      // Ne pas sauvegarder les parties terminées ou en setup
-      if (gameState.phase === "setup" || gameState.isGameFinished) {
+      if (
+        gameState.phase === "pickVariant" ||
+        gameState.phase === "setup" ||
+        gameState.isGameFinished
+      ) {
         localStorage.removeItem(STORAGE_KEY);
         return;
       }
@@ -110,26 +119,24 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, []);
 
   /**
-   * Vérifie s'il existe une partie sauvegardée
+   * Vérifie si partie sauvegardée
    */
   const hasSavedGame = useCallback((): boolean => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved !== null;
+      return localStorage.getItem(STORAGE_KEY) !== null;
     } catch {
       return false;
     }
   }, []);
 
   /**
-   * Charge une partie sauvegardée
+   * Charge partie sauvegardée
    */
   const loadSavedGame = useCallback((): boolean => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as TimesUpGameState;
-        // Remettre le tour en pause
+        const parsed = JSON.parse(saved) as PartyGuessGameState;
         parsed.turn.isActive = false;
         setState(parsed);
         return true;
@@ -141,7 +148,7 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, []);
 
   /**
-   * Supprime la partie sauvegardée
+   * Supprime la sauvegarde
    */
   const clearSavedGame = useCallback(() => {
     try {
@@ -152,28 +159,69 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, []);
 
   /**
-   * Démarre une nouvelle partie
+   * Sélectionne une variante et passe au setup
+   */
+  const selectVariant = useCallback((variant: PartyGuessVariant) => {
+    setState((prev) => ({
+      ...prev,
+      phase: "setup",
+      config: {
+        ...prev.config,
+        variants: [variant],
+      },
+    }));
+  }, []);
+
+  /**
+   * Retour au setup
+   */
+  const goBackToSetup = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      phase: "setup",
+      isGameStarted: false,
+      isGameFinished: false,
+    }));
+  }, []);
+
+  /**
+   * Retour au choix de variante
+   */
+  const goBackToVariantPicker = useCallback(() => {
+    setState(INITIAL_STATE);
+    clearSavedGame();
+  }, [clearSavedGame]);
+
+  /**
+   * Démarre une partie
    */
   const startGame = useCallback(
-    (config: TimesUpGameConfig) => {
-      const shuffledDeck = shuffleArray(config.cards);
+    (config: PartyGuessGameConfig) => {
+      // Préparer le deck pour la première manche
+      const firstRound = config.rounds[0];
+      let deck = shuffleArray(firstRound.cards);
+      
+      // Limiter le nombre de cartes si configuré
+      if (firstRound.cardsPerRound > 0 && deck.length > firstRound.cardsPerRound) {
+        deck = deck.slice(0, firstRound.cardsPerRound);
+      }
 
-      const newState: TimesUpGameState = {
-        phase: "round",
+      const newState: PartyGuessGameState = {
+        phase: "betweenTurns",
         config,
         currentRound: 1,
+        currentRoundVariant: firstRound.variant,
         currentTeamIndex: 0,
         teams: config.teams.map((team) => ({
           ...team,
-          scores: [0, 0, 0],
+          score: 0,
         })),
-        originalDeck: shuffledDeck,
-        currentDeck: [...shuffledDeck],
+        originalDeck: deck,
+        currentDeck: [...deck],
         foundCardsThisRound: [],
         turn: {
           isActive: false,
           timeLeft: config.turnDuration,
-          currentCardIndex: 0,
           skipsUsed: 0,
           cardsFoundThisTurn: [],
         },
@@ -192,13 +240,12 @@ export const useTimesUpGame = (): UseTimesUpGame => {
    */
   const startTurn = useCallback(() => {
     setState((prev) => {
-      const newState: TimesUpGameState = {
+      const newState: PartyGuessGameState = {
         ...prev,
-        phase: "turn",
+        phase: "playing",
         turn: {
           isActive: true,
           timeLeft: prev.config.turnDuration,
-          currentCardIndex: 0,
           skipsUsed: 0,
           cardsFoundThisTurn: [],
         },
@@ -209,7 +256,7 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [saveToStorage]);
 
   /**
-   * Carte trouvée - ajoute les points et passe à la suivante
+   * Carte trouvée
    */
   const cardFound = useCallback(() => {
     setState((prev) => {
@@ -221,20 +268,18 @@ export const useTimesUpGame = (): UseTimesUpGame => {
       const newCurrentDeck = prev.currentDeck.slice(1);
       const newFoundCards = [...prev.foundCardsThisRound, foundCard];
 
-      // Mise à jour du score de l'équipe
+      // Mise à jour score
       const newTeams = prev.teams.map((team, index) => {
         if (index === prev.currentTeamIndex) {
-          const newScores = [...team.scores];
-          newScores[prev.currentRound - 1] += 1;
-          return { ...team, scores: newScores };
+          return { ...team, score: team.score + 1 };
         }
         return team;
       });
 
-      // Vérifier si la manche est terminée (plus de cartes)
+      // Manche terminée ?
       const isRoundComplete = newCurrentDeck.length === 0;
 
-      const newState: TimesUpGameState = {
+      const newState: PartyGuessGameState = {
         ...prev,
         teams: newTeams,
         currentDeck: newCurrentDeck,
@@ -246,7 +291,6 @@ export const useTimesUpGame = (): UseTimesUpGame => {
         phase: isRoundComplete ? "roundEnd" : prev.phase,
       };
 
-      // Si manche terminée, arrêter le tour
       if (isRoundComplete) {
         newState.turn.isActive = false;
       }
@@ -257,15 +301,14 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [saveToStorage]);
 
   /**
-   * Passer une carte (sans points)
+   * Passer une carte
    */
   const skipCard = useCallback(() => {
     setState((prev) => {
       if (!prev.turn.isActive || prev.currentDeck.length <= 1) {
-        return prev; // On ne peut pas passer la dernière carte
+        return prev;
       }
 
-      // Vérifier la limite de passes
       if (
         prev.config.maxSkipsPerTurn > 0 &&
         prev.turn.skipsUsed >= prev.config.maxSkipsPerTurn
@@ -273,11 +316,10 @@ export const useTimesUpGame = (): UseTimesUpGame => {
         return prev;
       }
 
-      // Déplacer la carte à la fin du deck
       const [skippedCard, ...restDeck] = prev.currentDeck;
       const newDeck = [...restDeck, skippedCard];
 
-      const newState: TimesUpGameState = {
+      const newState: PartyGuessGameState = {
         ...prev,
         currentDeck: newDeck,
         turn: {
@@ -292,21 +334,19 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [saveToStorage]);
 
   /**
-   * Fin du tour (timer écoulé ou manuel)
+   * Fin du tour
    */
   const endTurn = useCallback(() => {
     setState((prev) => {
-      // Passer à l'équipe suivante
       const nextTeamIndex = (prev.currentTeamIndex + 1) % prev.teams.length;
 
-      const newState: TimesUpGameState = {
+      const newState: PartyGuessGameState = {
         ...prev,
-        phase: "round",
+        phase: "betweenTurns",
         currentTeamIndex: nextTeamIndex,
         turn: {
           isActive: false,
           timeLeft: prev.config.turnDuration,
-          currentCardIndex: 0,
           skipsUsed: 0,
           cardsFoundThisTurn: [],
         },
@@ -318,22 +358,21 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [saveToStorage]);
 
   /**
-   * Démarrer la manche suivante
+   * Démarrer manche suivante
    */
   const startNextRound = useCallback(() => {
     setState((prev) => {
-      const nextRound = (prev.currentRound + 1) as TimesUpRoundNumber;
+      const nextRound = prev.currentRound + 1;
 
-      // Si on a fini les 3 manches, terminer le jeu
-      if (nextRound > 3) {
-        const finalState: TimesUpGameState = {
+      // Fin du jeu ?
+      if (nextRound > prev.config.totalRounds) {
+        const finalState: PartyGuessGameState = {
           ...prev,
-          phase: "summary",
+          phase: "gameEnd",
           isGameFinished: true,
           turn: {
             isActive: false,
             timeLeft: prev.config.turnDuration,
-            currentCardIndex: 0,
             skipsUsed: 0,
             cardsFoundThisTurn: [],
           },
@@ -342,20 +381,27 @@ export const useTimesUpGame = (): UseTimesUpGame => {
         return finalState;
       }
 
-      // Rémélanger les cartes trouvées pour la nouvelle manche
-      const reshuffledDeck = shuffleArray(prev.foundCardsThisRound);
+      // Récupérer la config de la nouvelle manche
+      const nextRoundConfig = prev.config.rounds[nextRound - 1];
+      let newDeck = shuffleArray(nextRoundConfig.cards);
+      
+      // Limiter le nombre de cartes si configuré
+      if (nextRoundConfig.cardsPerRound > 0 && newDeck.length > nextRoundConfig.cardsPerRound) {
+        newDeck = newDeck.slice(0, nextRoundConfig.cardsPerRound);
+      }
 
-      const newState: TimesUpGameState = {
+      const newState: PartyGuessGameState = {
         ...prev,
-        phase: "round",
+        phase: "betweenTurns",
         currentRound: nextRound,
+        currentRoundVariant: nextRoundConfig.variant,
         currentTeamIndex: 0,
-        currentDeck: reshuffledDeck,
+        originalDeck: newDeck,
+        currentDeck: [...newDeck],
         foundCardsThisRound: [],
         turn: {
           isActive: false,
           timeLeft: prev.config.turnDuration,
-          currentCardIndex: 0,
           skipsUsed: 0,
           cardsFoundThisTurn: [],
         },
@@ -378,18 +424,16 @@ export const useTimesUpGame = (): UseTimesUpGame => {
           const newTimeLeft = prev.turn.timeLeft - 1;
 
           if (newTimeLeft <= 0) {
-            // Temps écoulé - fin du tour
             const nextTeamIndex =
               (prev.currentTeamIndex + 1) % prev.teams.length;
 
-            const newState: TimesUpGameState = {
+            const newState: PartyGuessGameState = {
               ...prev,
-              phase: "round",
+              phase: "betweenTurns",
               currentTeamIndex: nextTeamIndex,
               turn: {
                 isActive: false,
                 timeLeft: 0,
-                currentCardIndex: 0,
                 skipsUsed: 0,
                 cardsFoundThisTurn: [],
               },
@@ -419,12 +463,12 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [state.turn.isActive, state.turn.timeLeft, saveToStorage]);
 
   /**
-   * Termine le jeu prématurément
+   * Termine le jeu
    */
   const endGame = useCallback(() => {
     setState((prev) => ({
       ...prev,
-      phase: "summary",
+      phase: "gameEnd",
       isGameFinished: true,
       turn: {
         ...prev.turn,
@@ -435,7 +479,7 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [clearSavedGame]);
 
   /**
-   * Réinitialise le jeu
+   * Reset complet
    */
   const resetGame = useCallback(() => {
     setState(INITIAL_STATE);
@@ -443,27 +487,35 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [clearSavedGame]);
 
   /**
-   * Rejouer avec les mêmes équipes et cartes
+   * Rejouer avec mêmes équipes
    */
   const replayGame = useCallback(() => {
     setState((prev) => {
-      const reshuffledDeck = shuffleArray(prev.originalDeck);
+      // Récupérer la config de la première manche
+      const firstRound = prev.config.rounds[0];
+      let newDeck = shuffleArray(firstRound.cards);
+      
+      // Limiter le nombre de cartes si configuré
+      if (firstRound.cardsPerRound > 0 && newDeck.length > firstRound.cardsPerRound) {
+        newDeck = newDeck.slice(0, firstRound.cardsPerRound);
+      }
 
-      const newState: TimesUpGameState = {
+      const newState: PartyGuessGameState = {
         ...prev,
-        phase: "round",
+        phase: "betweenTurns",
         currentRound: 1,
+        currentRoundVariant: firstRound.variant,
         currentTeamIndex: 0,
         teams: prev.teams.map((team) => ({
           ...team,
-          scores: [0, 0, 0],
+          score: 0,
         })),
-        currentDeck: reshuffledDeck,
+        originalDeck: newDeck,
+        currentDeck: [...newDeck],
         foundCardsThisRound: [],
         turn: {
           isActive: false,
           timeLeft: prev.config.turnDuration,
-          currentCardIndex: 0,
           skipsUsed: 0,
           cardsFoundThisTurn: [],
         },
@@ -476,29 +528,29 @@ export const useTimesUpGame = (): UseTimesUpGame => {
   }, [saveToStorage]);
 
   /**
-   * Calcule le résumé final
+   * Résumé final
    */
-  const getSummary = useCallback((): TimesUpSummary => {
-    const teamsWithTotals = state.teams.map((team) => ({
-      ...team,
-      totalScore: team.scores.reduce((a, b) => a + b, 0),
-    }));
-
-    const maxScore = Math.max(...teamsWithTotals.map((t) => t.totalScore));
-    const winners = teamsWithTotals.filter((t) => t.totalScore === maxScore);
+  const getSummary = useCallback((): PartyGuessSummary => {
+    const sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
+    const maxScore = sortedTeams[0]?.score || 0;
+    const winners = sortedTeams.filter((t) => t.score === maxScore);
 
     return {
       teams: state.teams,
       winner: winners.length === 1 ? winners[0] : null,
       isTie: winners.length > 1,
+      totalCardsFound: state.foundCardsThisRound.length,
     };
-  }, [state.teams]);
+  }, [state.teams, state.foundCardsThisRound]);
 
   return {
     state,
     currentTeam,
     currentCard,
+    selectVariant,
     startGame,
+    goBackToSetup,
+    goBackToVariantPicker,
     startTurn,
     cardFound,
     skipCard,

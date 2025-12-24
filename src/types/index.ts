@@ -276,9 +276,20 @@ export type TimesUpRoundNumber = 1 | 2 | 3;
 /**
  * Labels des manches
  */
-export const TIMES_UP_ROUND_LABELS: Record<TimesUpRoundNumber, { name: string; description: string; icon: string }> = {
-  1: { name: "Description libre", description: "Décris avec autant de mots que tu veux !", icon: "🗣️" },
-  2: { name: "Un seul mot", description: "Un seul mot pour faire deviner !", icon: "☝️" },
+export const TIMES_UP_ROUND_LABELS: Record<
+  TimesUpRoundNumber,
+  { name: string; description: string; icon: string }
+> = {
+  1: {
+    name: "Description libre",
+    description: "Décris avec autant de mots que tu veux !",
+    icon: "🗣️",
+  },
+  2: {
+    name: "Un seul mot",
+    description: "Un seul mot pour faire deviner !",
+    icon: "☝️",
+  },
   3: { name: "Mime", description: "Mime sans parler !", icon: "🎭" },
 };
 
@@ -313,15 +324,15 @@ export interface TimesUpGameState {
   currentRound: TimesUpRoundNumber;
   currentTeamIndex: number;
   teams: TimesUpTeam[];
-  
+
   // Deck management
   originalDeck: TimesUpCard[]; // Deck original (mélangé une fois)
   currentDeck: TimesUpCard[]; // Cartes restantes dans la manche en cours
   foundCardsThisRound: TimesUpCard[]; // Cartes trouvées dans la manche
-  
+
   // Tour actif
   turn: TimesUpTurnState;
-  
+
   // Historique
   isGameStarted: boolean;
   isGameFinished: boolean;
@@ -334,4 +345,189 @@ export interface TimesUpSummary {
   teams: TimesUpTeam[];
   winner: TimesUpTeam | null;
   isTie: boolean;
+}
+
+// ============================================
+// Types pour le jeu "Party Guess"
+// ============================================
+
+/**
+ * Les 7 variantes de Party Guess
+ */
+export type PartyGuessVariant =
+  | "interdit"      // Taboo-like
+  | "mime"          // Mimer
+  | "oneWord"       // Un seul mot
+  | "lyrics"        // Finis les paroles
+  | "singIt"        // Chanter titre + artiste
+  | "celebrities"   // Célébrités
+  | "sports";       // Sport
+
+/**
+ * Infos sur chaque variante
+ */
+export const PARTY_GUESS_VARIANTS: Record<
+  PartyGuessVariant,
+  { name: string; description: string; icon: string; rule: string }
+> = {
+  interdit: {
+    name: "Interdit",
+    description: "Faire deviner sans dire le mot",
+    icon: "🚫",
+    rule: "Décris sans prononcer le mot !",
+  },
+  mime: {
+    name: "Mime",
+    description: "Mimer pour faire deviner",
+    icon: "🎭",
+    rule: "Mime uniquement, pas de paroles !",
+  },
+  oneWord: {
+    name: "Un seul mot",
+    description: "Un seul indice autorisé",
+    icon: "☝️",
+    rule: "Donne un seul mot comme indice !",
+  },
+  lyrics: {
+    name: "Finis les paroles",
+    description: "Continuer les paroles",
+    icon: "🎤",
+    rule: "Lis le début, les autres continuent !",
+  },
+  singIt: {
+    name: "Chante-le !",
+    description: "Chanter pour faire deviner",
+    icon: "🎵",
+    rule: "Chante la chanson pour faire deviner !",
+  },
+  celebrities: {
+    name: "Célébrités",
+    description: "Faire deviner des personnalités",
+    icon: "⭐",
+    rule: "Fais deviner la célébrité !",
+  },
+  sports: {
+    name: "Sport",
+    description: "Termes sportifs",
+    icon: "⚽",
+    rule: "Fais deviner le terme sportif !",
+  },
+};
+
+/**
+ * Types de cartes selon la variante
+ */
+export interface PartyGuessCardBase {
+  id: string;
+  isCustom?: boolean;
+}
+
+export interface PartyGuessCardWord extends PartyGuessCardBase {
+  type: "word";
+  word: string;
+}
+
+export interface PartyGuessCardLyrics extends PartyGuessCardBase {
+  type: "lyrics";
+  promptStart: string;
+  expectedContinuation?: string;
+}
+
+export interface PartyGuessCardSong extends PartyGuessCardBase {
+  type: "song";
+  title: string;
+  artist: string;
+}
+
+export type PartyGuessCard =
+  | PartyGuessCardWord
+  | PartyGuessCardLyrics
+  | PartyGuessCardSong;
+
+/**
+ * Équipe Party Guess
+ */
+export interface PartyGuessTeam {
+  id: string;
+  name: string;
+  color: string;
+  score: number;
+}
+
+/**
+ * Phases du jeu
+ */
+export type PartyGuessPhase =
+  | "pickVariant"
+  | "setup"
+  | "playing"
+  | "betweenTurns"
+  | "roundEnd"
+  | "gameEnd";
+
+/**
+ * Configuration d'une manche (round)
+ */
+export interface PartyGuessRoundConfig {
+  variant: PartyGuessVariant;
+  cards: PartyGuessCard[];
+  cardsPerRound: number; // 0 = toutes les cartes
+}
+
+/**
+ * Configuration du jeu
+ */
+export interface PartyGuessGameConfig {
+  variants: PartyGuessVariant[]; // Liste des variantes sélectionnées
+  rounds: PartyGuessRoundConfig[]; // Config par manche
+  teams: PartyGuessTeam[];
+  turnDuration: number;
+  allowSkip: boolean;
+  maxSkipsPerTurn: number;
+  totalRounds: number;
+  cardsPerRound: number; // Nombre de cartes par manche (0 = toutes)
+}
+
+/**
+ * État d'un tour
+ */
+export interface PartyGuessTurnState {
+  isActive: boolean;
+  timeLeft: number;
+  skipsUsed: number;
+  cardsFoundThisTurn: string[];
+}
+
+/**
+ * État complet du jeu
+ */
+export interface PartyGuessGameState {
+  phase: PartyGuessPhase;
+  config: PartyGuessGameConfig;
+  currentRound: number;
+  currentRoundVariant: PartyGuessVariant; // Variante de la manche en cours
+  currentTeamIndex: number;
+  teams: PartyGuessTeam[];
+  
+  // Deck
+  originalDeck: PartyGuessCard[];
+  currentDeck: PartyGuessCard[];
+  foundCardsThisRound: PartyGuessCard[];
+  
+  // Tour
+  turn: PartyGuessTurnState;
+  
+  // État
+  isGameStarted: boolean;
+  isGameFinished: boolean;
+}
+
+/**
+ * Résumé final
+ */
+export interface PartyGuessSummary {
+  teams: PartyGuessTeam[];
+  winner: PartyGuessTeam | null;
+  isTie: boolean;
+  totalCardsFound: number;
 }

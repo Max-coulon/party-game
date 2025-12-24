@@ -34,6 +34,13 @@ const availableGames: Game[] = [
     icon: '⏱️',
   },
   {
+    id: 'party-guess',
+    name: 'PartyGuess',
+    description: '7 modes pour faire deviner !',
+    minPlayers: 0, // Gestion d'équipes interne
+    icon: '🎯',
+  },
+  {
     id: 'finger-chooser',
     name: 'Finger Chooser',
     description: 'Qui sera désigné ?',

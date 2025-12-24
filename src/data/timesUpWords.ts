@@ -27,7 +27,7 @@ const DEFAULT_WORDS: string[] = [
   "Dracula",
   "Mickey Mouse",
   "Pikachu",
-  
+
   // Objets / Concepts
   "Parapluie",
   "Machine à laver",
@@ -39,7 +39,7 @@ const DEFAULT_WORDS: string[] = [
   "Lunettes de soleil",
   "Brosse à dents",
   "Réveil matin",
-  
+
   // Lieux
   "Tour Eiffel",
   "Statue de la Liberté",
@@ -51,7 +51,7 @@ const DEFAULT_WORDS: string[] = [
   "Venise",
   "Las Vegas",
   "Disneyland",
-  
+
   // Animaux
   "Éléphant",
   "Kangourou",
@@ -63,7 +63,7 @@ const DEFAULT_WORDS: string[] = [
   "Crocodile",
   "Flamant rose",
   "Paresseux",
-  
+
   // Films / Séries
   "Titanic",
   "Star Wars",
@@ -75,7 +75,7 @@ const DEFAULT_WORDS: string[] = [
   "Jurassic Park",
   "Matrix",
   "Avatar",
-  
+
   // Sports / Activités
   "Football",
   "Yoga",
@@ -87,7 +87,7 @@ const DEFAULT_WORDS: string[] = [
   "Plongée sous-marine",
   "Marathon",
   "Équitation",
-  
+
   // Nourriture
   "Pizza",
   "Sushi",
@@ -99,7 +99,7 @@ const DEFAULT_WORDS: string[] = [
   "Crêpe",
   "Fondue",
   "Macaron",
-  
+
   // Métiers
   "Pompier",
   "Astronaute",
@@ -111,7 +111,7 @@ const DEFAULT_WORDS: string[] = [
   "Plombier",
   "Coiffeur",
   "Photographe",
-  
+
   // Expressions / Actions
   "Ronfler",
   "Éternuer",
