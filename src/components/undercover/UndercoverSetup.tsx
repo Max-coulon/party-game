@@ -10,7 +10,6 @@ import {
   getMaxUndercoverCount,
   canHaveMrWhite,
   parseCustomWordPairs,
-  generateDefaultPlayerNames,
 } from "@/data/undercoverData";
 
 interface UndercoverSetupProps {
@@ -31,8 +30,7 @@ export const UndercoverSetup: React.FC<UndercoverSetupProps> = ({
 }) => {
   // Configuration des joueurs
   const [playerCount, setPlayerCount] = useState(4);
-  const [playerNames, setPlayerNames] = useState<string[]>(generateDefaultPlayerNames(4));
-  const [showPlayerNames, setShowPlayerNames] = useState(false);
+  const [playerNames, setPlayerNames] = useState<string[]>(Array(4).fill(""));
 
   // Configuration des rôles
   const [undercoverCount, setUndercoverCount] = useState(1);
@@ -73,7 +71,7 @@ export const UndercoverSetup: React.FC<UndercoverSetupProps> = ({
     
     // Ajuster les noms
     if (newCount > playerNames.length) {
-      const additionalNames = generateDefaultPlayerNames(newCount).slice(playerNames.length);
+      const additionalNames = Array(newCount - playerNames.length).fill("");
       setPlayerNames([...playerNames, ...additionalNames]);
     } else {
       setPlayerNames(playerNames.slice(0, newCount));
@@ -108,10 +106,19 @@ export const UndercoverSetup: React.FC<UndercoverSetupProps> = ({
     setPlayerNames(newNames);
   };
 
+  // Vérifier si tous les noms sont renseignés
+  const allNamesEntered = playerNames.every(n => n.trim().length > 0);
+
   // Démarrer la partie
   const handleStartGame = () => {
+    // Vérifier que tous les noms sont renseignés
+    if (!allNamesEntered) {
+      alert("Veuillez renseigner le nom de tous les joueurs !");
+      return;
+    }
+    
     // Valider les noms
-    const validNames = playerNames.map((n, i) => n.trim() || `Joueur ${i + 1}`);
+    const validNames = playerNames.map((n) => n.trim());
 
     // Sélectionner une paire de mots
     let wordPair: UndercoverWordPair;
@@ -203,30 +210,37 @@ export const UndercoverSetup: React.FC<UndercoverSetupProps> = ({
           </button>
         </div>
 
-        {/* Toggle pour les noms personnalisés */}
-        <button
-          onClick={() => setShowPlayerNames(!showPlayerNames)}
-          className="w-full mt-4 py-2 text-dark-400 hover:text-white text-sm flex items-center justify-center gap-2 transition-colors"
-        >
-          <span>{showPlayerNames ? "▼" : "▶"}</span>
-          <span>Personnaliser les noms</span>
-        </button>
-
-        {/* Liste des noms */}
-        {showPlayerNames && (
-          <div className="mt-4 space-y-2 animate-fade-in">
-            {playerNames.map((name, index) => (
+        {/* Liste des noms des joueurs */}
+        <div className="mt-4 space-y-2">
+          <p className="text-dark-400 text-sm mb-3">Entrez le nom de chaque joueur :</p>
+          {playerNames.map((name, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <span className="text-primary-400 font-bold w-6 text-center">{index + 1}</span>
               <input
-                key={index}
                 type="text"
                 value={name}
                 onChange={(e) => handlePlayerNameChange(index, e.target.value)}
-                placeholder={`Joueur ${index + 1}`}
-                className="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-xl text-white placeholder-dark-400 focus:outline-none focus:border-primary-500 transition-colors"
+                placeholder={`Nom du joueur ${index + 1}`}
+                className={`flex-1 px-4 py-3 bg-dark-700 border rounded-xl text-white placeholder-dark-500 focus:outline-none transition-colors ${
+                  name.trim() ? "border-green-500/50" : "border-dark-600 focus:border-primary-500"
+                }`}
               />
-            ))}
+              {name.trim() && <span className="text-green-500">✓</span>}
+            </div>
+          ))}
+          
+          {/* Indicateur de progression */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-dark-700">
+            <span className="text-dark-500 text-sm">
+              {playerNames.filter(n => n.trim()).length} / {playerCount} joueurs
+            </span>
+            {playerNames.filter(n => n.trim()).length === playerCount && (
+              <span className="text-green-400 text-sm flex items-center gap-1">
+                <span>✓</span> Tous les noms sont renseignés
+              </span>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Configuration des rôles */}
@@ -455,10 +469,15 @@ export const UndercoverSetup: React.FC<UndercoverSetupProps> = ({
       <div className="space-y-3 pt-2">
         <button
           onClick={handleStartGame}
-          className="w-full py-5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-xl rounded-2xl transition-all transform hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center gap-3"
+          disabled={!allNamesEntered}
+          className={`w-full py-5 font-bold text-xl rounded-2xl transition-all transform shadow-xl flex items-center justify-center gap-3 ${
+            allNamesEntered
+              ? "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white hover:scale-105 active:scale-95"
+              : "bg-dark-700 text-dark-500 cursor-not-allowed"
+          }`}
         >
-          <span className="text-3xl">🚀</span>
-          <span>Commencer !</span>
+          <span className="text-3xl">{allNamesEntered ? "🚀" : "✏️"}</span>
+          <span>{allNamesEntered ? "Commencer !" : "Renseignez tous les noms"}</span>
         </button>
 
         <button
