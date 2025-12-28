@@ -85,16 +85,17 @@ export const UndercoverRoleReveal: React.FC<UndercoverRoleRevealProps> = ({
         // Bouton pour révéler
         <div className="flex flex-col items-center justify-center py-12 animate-scale-in">
           <div className="relative">
+            {/* Animation pulse - derrière le bouton */}
+            <div className="absolute inset-0 rounded-full bg-primary-500/30 animate-ping pointer-events-none" />
+            
             <button
               onClick={handleReveal}
-              className="w-48 h-48 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 hover:from-primary-400 hover:to-primary-600 text-white font-bold text-xl shadow-2xl transition-all transform hover:scale-110 active:scale-95 flex flex-col items-center justify-center gap-3 border-4 border-primary-400/30"
+              type="button"
+              className="relative z-10 w-48 h-48 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 hover:from-primary-400 hover:to-primary-600 text-white font-bold text-xl shadow-2xl transition-all transform hover:scale-110 active:scale-95 flex flex-col items-center justify-center gap-3 border-4 border-primary-400/30"
             >
               <span className="text-5xl">👁️</span>
               <span>Voir mon rôle</span>
             </button>
-            
-            {/* Animation pulse */}
-            <div className="absolute inset-0 rounded-full bg-primary-500/30 animate-ping" />
           </div>
 
           <p className="text-dark-500 text-sm mt-6 text-center max-w-xs">

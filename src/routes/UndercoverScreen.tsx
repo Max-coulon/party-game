@@ -100,6 +100,7 @@ const UndercoverScreen: React.FC = () => {
         {/* Phase 2: Distribution des rôles (pass-and-play) */}
         {state.phase === "roleReveal" && currentRevealPlayer && (
           <UndercoverRoleReveal
+            key={`reveal-${state.currentRevealIndex}`}
             player={currentRevealPlayer}
             playerIndex={state.currentRevealIndex}
             totalPlayers={state.players.length}
