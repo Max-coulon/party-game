@@ -68,11 +68,6 @@ const TRUTHS_SOFT: Omit<TodItem, "id">[] = [
   {
     type: "truth",
     level: "soft",
-    text: "As-tu déjà eu le béguin pour un prof ?",
-  },
-  {
-    type: "truth",
-    level: "soft",
     text: "Quelle est ta plus grosse honte sur les réseaux sociaux ?",
   },
   {
@@ -970,11 +965,6 @@ const DARES_HARDCORE: Omit<TodItem, "id">[] = [
     type: "dare",
     level: "hardcore",
     text: "Sors dehors en sous-vêtements pendant 2 minutes.",
-  },
-  {
-    type: "dare",
-    level: "hardcore",
-    text: 'Joue à "Je n\'ai jamais" version hard et bois à chaque fois.',
   },
   {
     type: "dare",

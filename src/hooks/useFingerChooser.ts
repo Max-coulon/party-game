@@ -230,6 +230,13 @@ export const useFingerChooser = (): UseFingerChooser => {
    */
   const handlePointerDown = useCallback(
     (e: PointerEvent) => {
+      e.preventDefault();
+      console.log("[FingerChooser] pointerdown", {
+        pointerId: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        status: statusRef.current,
+      });
       if (statusRef.current === "chosen") return;
 
       const { pointerId, clientX, clientY } = e;
@@ -244,7 +251,8 @@ export const useFingerChooser = (): UseFingerChooser => {
         }
       }
 
-      store.addFinger(pointerId, clientX, clientY);
+      const added = store.addFinger(pointerId, clientX, clientY);
+      console.log("[FingerChooser] finger added?", added, "total:", store.size);
     },
     [store]
   );

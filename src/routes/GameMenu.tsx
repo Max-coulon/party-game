@@ -119,6 +119,7 @@ export const GameMenu: React.FC = () => {
           <div className="p-4 bg-dark-800/50 backdrop-blur-sm rounded-2xl border border-dark-700">
             <p className="font-medium text-dark-300">🎉 Party Game</p>
             <p className="mt-2 text-yellow-400/80 font-semibold">⚠️ Buvez responsablement !</p>
+            <p className="mt-2 text-dark-500 text-xs">v1.0.0</p>
           </div>
         </div>
       </div>

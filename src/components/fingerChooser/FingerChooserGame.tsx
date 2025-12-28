@@ -46,7 +46,11 @@ export const FingerChooserGame: React.FC<FingerChooserGameProps> = ({
    */
   useEffect(() => {
     const gameArea = gameAreaRef.current;
-    if (!gameArea) return;
+    if (!gameArea) {
+      console.error("[FingerChooser] gameAreaRef is null!");
+      return;
+    }
+    console.log("[FingerChooser] Attaching event listeners to gameArea", gameArea);
 
     gameArea.addEventListener("pointerdown", handlePointerDown);
     gameArea.addEventListener("pointermove", handlePointerMove);

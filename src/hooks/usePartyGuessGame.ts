@@ -343,10 +343,18 @@ export const usePartyGuessGame = (): UsePartyGuessGame => {
     setState((prev) => {
       const nextTeamIndex = (prev.currentTeamIndex + 1) % prev.teams.length;
 
+      // Rotate the deck so the next team doesn't start on the exact same card
+      let rotatedDeck = [...prev.currentDeck];
+      if (rotatedDeck.length > 1) {
+        const [first, ...rest] = rotatedDeck;
+        rotatedDeck = [...rest, first];
+      }
+
       const newState: PartyGuessGameState = {
         ...prev,
         phase: "betweenTurns",
         currentTeamIndex: nextTeamIndex,
+        currentDeck: rotatedDeck,
         turn: {
           isActive: false,
           timeLeft: prev.config.turnDuration,
@@ -396,12 +404,16 @@ export const usePartyGuessGame = (): UsePartyGuessGame => {
         newDeck = newDeck.slice(0, nextRoundConfig.cardsPerRound);
       }
 
+      const startingTeamIndex = prev.teams.length
+        ? (nextRound - 1) % prev.teams.length
+        : 0;
+
       const newState: PartyGuessGameState = {
         ...prev,
         phase: "betweenTurns",
         currentRound: nextRound,
         currentRoundVariant: nextRoundConfig.variant,
-        currentTeamIndex: 0,
+        currentTeamIndex: startingTeamIndex,
         originalDeck: newDeck,
         currentDeck: [...newDeck],
         foundCardsThisRound: [],
@@ -433,10 +445,18 @@ export const usePartyGuessGame = (): UsePartyGuessGame => {
             const nextTeamIndex =
               (prev.currentTeamIndex + 1) % prev.teams.length;
 
+            // Rotate deck so the next team doesn't start on the same card
+            let rotatedDeck = [...prev.currentDeck];
+            if (rotatedDeck.length > 1) {
+              const [first, ...rest] = rotatedDeck;
+              rotatedDeck = [...rest, first];
+            }
+
             const newState: PartyGuessGameState = {
               ...prev,
               phase: "betweenTurns",
               currentTeamIndex: nextTeamIndex,
+              currentDeck: rotatedDeck,
               turn: {
                 isActive: false,
                 timeLeft: 0,

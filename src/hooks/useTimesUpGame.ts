@@ -299,10 +299,18 @@ export const useTimesUpGame = (): UseTimesUpGame => {
       // Passer à l'équipe suivante
       const nextTeamIndex = (prev.currentTeamIndex + 1) % prev.teams.length;
 
+      // Rotate the deck so the next team doesn't start on the same card
+      let rotatedDeck = [...prev.currentDeck];
+      if (rotatedDeck.length > 1) {
+        const [first, ...rest] = rotatedDeck;
+        rotatedDeck = [...rest, first];
+      }
+
       const newState: TimesUpGameState = {
         ...prev,
         phase: "round",
         currentTeamIndex: nextTeamIndex,
+        currentDeck: rotatedDeck,
         turn: {
           isActive: false,
           timeLeft: prev.config.turnDuration,
@@ -345,11 +353,16 @@ export const useTimesUpGame = (): UseTimesUpGame => {
       // Rémélanger les cartes trouvées pour la nouvelle manche
       const reshuffledDeck = shuffleArray(prev.foundCardsThisRound);
 
+      // Alternate starting team for each round
+      const startingTeamIndex = prev.teams.length
+        ? (nextRound - 1) % prev.teams.length
+        : 0;
+
       const newState: TimesUpGameState = {
         ...prev,
         phase: "round",
         currentRound: nextRound,
-        currentTeamIndex: 0,
+        currentTeamIndex: startingTeamIndex,
         currentDeck: reshuffledDeck,
         foundCardsThisRound: [],
         turn: {
@@ -382,10 +395,18 @@ export const useTimesUpGame = (): UseTimesUpGame => {
             const nextTeamIndex =
               (prev.currentTeamIndex + 1) % prev.teams.length;
 
+            // Rotate deck so the next team doesn't start on the same card
+            let rotatedDeck = [...prev.currentDeck];
+            if (rotatedDeck.length > 1) {
+              const [first, ...rest] = rotatedDeck;
+              rotatedDeck = [...rest, first];
+            }
+
             const newState: TimesUpGameState = {
               ...prev,
               phase: "round",
               currentTeamIndex: nextTeamIndex,
+              currentDeck: rotatedDeck,
               turn: {
                 isActive: false,
                 timeLeft: 0,

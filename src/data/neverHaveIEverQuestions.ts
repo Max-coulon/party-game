@@ -581,7 +581,7 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
   },
   {
     id: "hot-2",
-    text: "Je n'ai jamais eu le béguin pour quelqu'un dans cette pièce",
+    text: "Je n'ai jamais eu de l'attriance pour quelqu'un dans cette pièce",
     mode: "hot",
     sips: 2,
     points: 2,
@@ -657,13 +657,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
     points: 3,
   },
   {
-    id: "hot-13",
-    text: "Je n'ai jamais fait un threesome",
-    mode: "hot",
-    sips: 4,
-    points: 4,
-  },
-  {
     id: "hot-14",
     text: "Je n'ai jamais été attiré(e) par quelqu'un du même sexe",
     mode: "hot",
@@ -715,13 +708,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
   {
     id: "hot-21",
     text: "Je n'ai jamais ghosté quelqu'un après un rendez-vous",
-    mode: "hot",
-    sips: 2,
-    points: 2,
-  },
-  {
-    id: "hot-22",
-    text: "Je n'ai jamais eu un coup de cœur pour un(e) inconnu(e) dans les transports",
     mode: "hot",
     sips: 2,
     points: 2,
@@ -881,13 +867,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
     points: 4,
   },
   {
-    id: "hot-45",
-    text: "Je n'ai jamais pratiqué le sexting avec un(e) inconnu(e)",
-    mode: "hot",
-    sips: 3,
-    points: 3,
-  },
-  {
     id: "hot-46",
     text: "Je n'ai jamais été dans une situation à trois (ou plus)",
     mode: "hot",
@@ -985,13 +964,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
     mode: "hot",
     sips: 4,
     points: 4,
-  },
-  {
-    id: "hot-60",
-    text: "Je n'ai jamais fait semblant d'avoir eu un orgasme",
-    mode: "hot",
-    sips: 3,
-    points: 3,
   },
   {
     id: "hot-61",
@@ -1150,13 +1122,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
     points: 5,
   },
   {
-    id: "hardcore-8",
-    text: "Je n'ai jamais été filmé(e) pendant l'acte",
-    mode: "hardcore",
-    sips: 4,
-    points: 4,
-  },
-  {
     id: "hardcore-9",
     text: "Je n'ai jamais participé à un échange de partenaires",
     mode: "hardcore",
@@ -1250,13 +1215,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
   {
     id: "hardcore-22",
     text: "Je n'ai jamais eu une aventure avec quelqu'un de marié(e)",
-    mode: "hardcore",
-    sips: 5,
-    points: 5,
-  },
-  {
-    id: "hardcore-23",
-    text: "Je n'ai jamais pratiqué le candaulisme",
     mode: "hardcore",
     sips: 5,
     points: 5,
@@ -1590,13 +1548,6 @@ export const neverHaveIEverQuestions: NheQuestion[] = [
     mode: "hardcore",
     sips: 5,
     points: 5,
-  },
-  {
-    id: "hardcore-71",
-    text: "Je n'ai jamais participé à un jeu de bouteille qui a dégénéré",
-    mode: "hardcore",
-    sips: 4,
-    points: 4,
   },
   {
     id: "hardcore-72",
