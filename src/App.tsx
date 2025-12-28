@@ -6,6 +6,7 @@ import { TruthOrDareScreen } from '@/routes/TruthOrDareScreen';
 import { FingerChooserScreen } from '@/routes/FingerChooserScreen';
 import { TimesUpScreen } from '@/routes/TimesUpScreen';
 import PartyGuessScreen from '@/routes/PartyGuessScreen';
+import UndercoverScreen from '@/routes/UndercoverScreen';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 /**
@@ -23,6 +24,7 @@ function App() {
           <Route path="/game/finger-chooser" element={<FingerChooserScreen />} />
           <Route path="/game/times-up" element={<TimesUpScreen />} />
           <Route path="/game/party-guess" element={<PartyGuessScreen />} />
+          <Route path="/game/undercover" element={<UndercoverScreen />} />
         </Routes>
         <PwaInstallPrompt />
       </BrowserRouter>

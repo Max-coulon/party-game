@@ -531,3 +531,141 @@ export interface PartyGuessSummary {
   isTie: boolean;
   totalCardsFound: number;
 }
+
+// ============================================
+// Types pour le jeu "Undercover"
+// ============================================
+
+/**
+ * Rôle d'un joueur dans Undercover
+ */
+export type UndercoverRole = "civil" | "undercover" | "mrwhite";
+
+/**
+ * Paire de mots pour une partie
+ */
+export interface UndercoverWordPair {
+  id: string;
+  civilWord: string;
+  undercoverWord: string;
+  category?: string;
+}
+
+/**
+ * Joueur dans une partie Undercover
+ */
+export interface UndercoverPlayer {
+  id: string;
+  name: string;
+  role: UndercoverRole;
+  word: string | null; // null pour Mr White
+  isEliminated: boolean;
+  eliminatedAtRound?: number;
+  votesReceived: number; // Votes reçus ce tour
+}
+
+/**
+ * Entrée de vote
+ */
+export interface UndercoverVote {
+  voterId: string;
+  targetId: string;
+}
+
+/**
+ * Historique d'élimination
+ */
+export interface UndercoverEliminationEntry {
+  round: number;
+  playerId: string;
+  playerName: string;
+  role: UndercoverRole;
+  votesReceived: number;
+}
+
+/**
+ * Options de règles
+ */
+export interface UndercoverRulesOptions {
+  discussionDuration: number; // 0 = sans timer, sinon en secondes
+  allowSelfVote: boolean; // Peut-on voter pour soi-même
+  revealRoleOnElimination: boolean; // Révéler le rôle immédiatement
+  showEliminationHistory: boolean; // Afficher l'historique des éliminations
+  tieBreakMode: "random" | "revote"; // En cas d'égalité
+}
+
+/**
+ * Configuration de la partie
+ */
+export interface UndercoverGameConfig {
+  playerNames: string[];
+  undercoverCount: number;
+  hasMrWhite: boolean;
+  wordPair: UndercoverWordPair;
+  rules: UndercoverRulesOptions;
+}
+
+/**
+ * Phases du jeu Undercover
+ */
+export type UndercoverPhase =
+  | "setup" // Configuration
+  | "roleReveal" // Distribution secrète pass-and-play
+  | "discussion" // Phase de discussion
+  | "voting" // Phase de vote pass-and-play
+  | "voteResult" // Résultat du vote
+  | "elimination" // Annonce de l'élimination
+  | "mrWhiteGuess" // Mr White devine le mot (s'il est éliminé)
+  | "gameEnd"; // Fin de partie
+
+/**
+ * Résultat de la partie
+ */
+export type UndercoverWinner = "civils" | "undercover" | "mrwhite" | null;
+
+/**
+ * État complet du jeu Undercover
+ */
+export interface UndercoverGameState {
+  phase: UndercoverPhase;
+  config: UndercoverGameConfig;
+  players: UndercoverPlayer[];
+  currentRound: number;
+  
+  // Distribution des rôles
+  currentRevealIndex: number; // Index du joueur qui voit son rôle
+  
+  // Discussion
+  discussionTimeLeft: number;
+  
+  // Vote
+  currentVoterIndex: number; // Index du joueur qui vote
+  votes: UndercoverVote[];
+  lastEliminatedId: string | null;
+  
+  // Égalité
+  tiedPlayerIds: string[]; // Joueurs à égalité pour revote
+  isRevote: boolean;
+  
+  // Mr White
+  mrWhiteGuessCorrect: boolean | null;
+  
+  // Historique
+  eliminationHistory: UndercoverEliminationEntry[];
+  
+  // État
+  isGameStarted: boolean;
+  isGameFinished: boolean;
+  winner: UndercoverWinner;
+}
+
+/**
+ * Résumé de fin de partie Undercover
+ */
+export interface UndercoverSummary {
+  winner: UndercoverWinner;
+  players: UndercoverPlayer[];
+  eliminationHistory: UndercoverEliminationEntry[];
+  wordPair: UndercoverWordPair;
+  totalRounds: number;
+}

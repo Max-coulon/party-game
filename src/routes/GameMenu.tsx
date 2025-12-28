@@ -27,6 +27,13 @@ const availableGames: Game[] = [
     icon: '🎭',
   },
   {
+    id: 'undercover',
+    name: 'Undercover',
+    description: 'Trouvez l\'imposteur !',
+    minPlayers: 0, // Gestion interne des joueurs
+    icon: '🕵️',
+  },
+  {
     id: 'times-up',
     name: 'Time\'s Up',
     description: 'Faites deviner en 3 manches !',
