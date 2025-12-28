@@ -55,38 +55,38 @@ const INITIAL_STATE: UndercoverGameState = {
 interface UseUndercoverGame {
   // État
   state: UndercoverGameState;
-  
+
   // Joueurs helpers
   currentRevealPlayer: UndercoverPlayer | null;
   currentVoter: UndercoverPlayer | null;
   alivePlayers: UndercoverPlayer[];
   lastEliminated: UndercoverPlayer | null;
-  
+
   // Actions de configuration
   startGame: (config: UndercoverGameConfig) => void;
   goBackToSetup: () => void;
-  
+
   // Actions de révélation des rôles
   confirmRoleSeen: () => void;
-  
+
   // Actions de discussion
   startDiscussion: () => void;
   skipDiscussionTimer: () => void;
-  
+
   // Actions de vote
   submitVote: (targetId: string) => void;
-  
+
   // Actions post-vote
   confirmVoteResult: () => void;
   confirmElimination: () => void;
-  
+
   // Actions Mr White
   submitMrWhiteGuess: (guess: string) => void;
-  
+
   // Actions de fin
   resetGame: () => void;
   replayGame: () => void;
-  
+
   // Utilitaires
   getSummary: () => UndercoverSummary;
   hasSavedGame: () => boolean;
@@ -106,11 +106,11 @@ export const useUndercoverGame = (): UseUndercoverGame => {
   // ============================================
 
   const currentRevealPlayer = state.players[state.currentRevealIndex] || null;
-  
+
   const alivePlayers = state.players.filter((p) => !p.isEliminated);
-  
+
   const currentVoter = alivePlayers[state.currentVoterIndex] || null;
-  
+
   const lastEliminated = state.lastEliminatedId
     ? state.players.find((p) => p.id === state.lastEliminatedId) || null
     : null;
@@ -121,10 +121,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
 
   const saveToStorage = useCallback((gameState: UndercoverGameState) => {
     try {
-      if (
-        gameState.phase === "setup" ||
-        gameState.isGameFinished
-      ) {
+      if (gameState.phase === "setup" || gameState.isGameFinished) {
         localStorage.removeItem(STORAGE_KEY);
         return;
       }
@@ -211,46 +208,48 @@ export const useUndercoverGame = (): UseUndercoverGame => {
   const startGame = useCallback((config: UndercoverGameConfig) => {
     // Créer et assigner les rôles
     const roles: UndercoverRole[] = [];
-    
+
     // Ajouter les undercovers
     for (let i = 0; i < config.undercoverCount; i++) {
       roles.push("undercover");
     }
-    
+
     // Ajouter Mr White si activé
     if (config.hasMrWhite) {
       roles.push("mrwhite");
     }
-    
+
     // Remplir le reste avec des civils
     while (roles.length < config.playerNames.length) {
       roles.push("civil");
     }
-    
+
     // Mélanger les rôles
     const shuffledRoles = shuffleArray(roles);
-    
+
     // Créer les joueurs
-    const players: UndercoverPlayer[] = config.playerNames.map((name, index) => {
-      const role = shuffledRoles[index];
-      let word: string | null = null;
-      
-      if (role === "civil") {
-        word = config.wordPair.civilWord;
-      } else if (role === "undercover") {
-        word = config.wordPair.undercoverWord;
+    const players: UndercoverPlayer[] = config.playerNames.map(
+      (name, index) => {
+        const role = shuffledRoles[index];
+        let word: string | null = null;
+
+        if (role === "civil") {
+          word = config.wordPair.civilWord;
+        } else if (role === "undercover") {
+          word = config.wordPair.undercoverWord;
+        }
+        // Mr White n'a pas de mot (word reste null)
+
+        return {
+          id: `player-${index}-${Date.now()}`,
+          name,
+          role,
+          word,
+          isEliminated: false,
+          votesReceived: 0,
+        };
       }
-      // Mr White n'a pas de mot (word reste null)
-      
-      return {
-        id: `player-${index}-${Date.now()}`,
-        name,
-        role,
-        word,
-        isEliminated: false,
-        votesReceived: 0,
-      };
-    });
+    );
 
     setState({
       ...INITIAL_STATE,
@@ -277,7 +276,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
   const confirmRoleSeen = useCallback(() => {
     setState((prev) => {
       const nextIndex = prev.currentRevealIndex + 1;
-      
+
       if (nextIndex >= prev.players.length) {
         // Tous les joueurs ont vu leur rôle, passer à la discussion
         return {
@@ -286,7 +285,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
           discussionTimeLeft: prev.config.rules.discussionDuration,
         };
       }
-      
+
       return {
         ...prev,
         currentRevealIndex: nextIndex,
@@ -313,7 +312,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    
+
     setState((prev) => ({
       ...prev,
       phase: "voting",
@@ -328,7 +327,9 @@ export const useUndercoverGame = (): UseUndercoverGame => {
    */
   const submitVote = useCallback((targetId: string) => {
     setState((prev) => {
-      const voter = prev.players.filter((p) => !p.isEliminated)[prev.currentVoterIndex];
+      const voter = prev.players.filter((p) => !p.isEliminated)[
+        prev.currentVoterIndex
+      ];
       if (!voter) return prev;
 
       const newVote: UndercoverVote = {
@@ -360,17 +361,19 @@ export const useUndercoverGame = (): UseUndercoverGame => {
   /**
    * Calcule les résultats du vote
    */
-  const calculateVoteResults = (currentState: UndercoverGameState): UndercoverGameState => {
+  const calculateVoteResults = (
+    currentState: UndercoverGameState
+  ): UndercoverGameState => {
     // Compter les votes par joueur
     const voteCounts: Record<string, number> = {};
-    
+
     currentState.votes.forEach((vote) => {
       voteCounts[vote.targetId] = (voteCounts[vote.targetId] || 0) + 1;
     });
 
     // Trouver le maximum de votes
     const maxVotes = Math.max(...Object.values(voteCounts));
-    
+
     // Trouver tous les joueurs avec le maximum de votes
     const mostVotedIds = Object.entries(voteCounts)
       .filter(([, count]) => count === maxVotes)
@@ -384,7 +387,10 @@ export const useUndercoverGame = (): UseUndercoverGame => {
 
     // Égalité ?
     if (mostVotedIds.length > 1) {
-      if (currentState.config.rules.tieBreakMode === "revote" && !currentState.isRevote) {
+      if (
+        currentState.config.rules.tieBreakMode === "revote" &&
+        !currentState.isRevote
+      ) {
         // Revote entre les joueurs à égalité
         return {
           ...currentState,
@@ -397,7 +403,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
         // Tie-break aléatoire
         const randomIndex = Math.floor(Math.random() * mostVotedIds.length);
         const eliminatedId = mostVotedIds[randomIndex];
-        
+
         return {
           ...currentState,
           players: updatedPlayers,
@@ -451,14 +457,17 @@ export const useUndercoverGame = (): UseUndercoverGame => {
     setState((prev) => {
       if (!prev.lastEliminatedId) return prev;
 
-      const eliminatedPlayer = prev.players.find((p) => p.id === prev.lastEliminatedId);
+      const eliminatedPlayer = prev.players.find(
+        (p) => p.id === prev.lastEliminatedId
+      );
       if (!eliminatedPlayer) return prev;
 
       // Marquer le joueur comme éliminé
-      const updatedPlayers = prev.players.map((p) =>
-        p.id === prev.lastEliminatedId
-          ? { ...p, isEliminated: true, eliminatedAtRound: prev.currentRound }
-          : { ...p, votesReceived: 0 } // Reset votes pour le prochain tour
+      const updatedPlayers = prev.players.map(
+        (p) =>
+          p.id === prev.lastEliminatedId
+            ? { ...p, isEliminated: true, eliminatedAtRound: prev.currentRound }
+            : { ...p, votesReceived: 0 } // Reset votes pour le prochain tour
       );
 
       // Ajouter à l'historique
@@ -484,9 +493,15 @@ export const useUndercoverGame = (): UseUndercoverGame => {
 
       // Vérifier les conditions de victoire
       const remainingPlayers = updatedPlayers.filter((p) => !p.isEliminated);
-      const remainingUndercovers = remainingPlayers.filter((p) => p.role === "undercover");
-      const remainingMrWhite = remainingPlayers.filter((p) => p.role === "mrwhite");
-      const remainingCivils = remainingPlayers.filter((p) => p.role === "civil");
+      const remainingUndercovers = remainingPlayers.filter(
+        (p) => p.role === "undercover"
+      );
+      const remainingMrWhite = remainingPlayers.filter(
+        (p) => p.role === "mrwhite"
+      );
+      const remainingCivils = remainingPlayers.filter(
+        (p) => p.role === "civil"
+      );
 
       // Victoire des civils: tous les undercovers et Mr White éliminés
       if (remainingUndercovers.length === 0 && remainingMrWhite.length === 0) {
@@ -549,8 +564,12 @@ export const useUndercoverGame = (): UseUndercoverGame => {
 
       // Mr White a échoué, vérifier les conditions de victoire
       const remainingPlayers = prev.players.filter((p) => !p.isEliminated);
-      const remainingUndercovers = remainingPlayers.filter((p) => p.role === "undercover");
-      const remainingCivils = remainingPlayers.filter((p) => p.role === "civil");
+      const remainingUndercovers = remainingPlayers.filter(
+        (p) => p.role === "undercover"
+      );
+      const remainingCivils = remainingPlayers.filter(
+        (p) => p.role === "civil"
+      );
 
       // Victoire des civils si plus d'undercovers
       if (remainingUndercovers.length === 0) {
@@ -602,7 +621,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
   const replayGame = useCallback(() => {
     setState((prev) => {
       const newWordPair = getRandomWordPair([prev.config.wordPair.id]);
-      
+
       return {
         ...INITIAL_STATE,
         config: {

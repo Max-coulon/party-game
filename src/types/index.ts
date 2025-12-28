@@ -631,28 +631,28 @@ export interface UndercoverGameState {
   config: UndercoverGameConfig;
   players: UndercoverPlayer[];
   currentRound: number;
-  
+
   // Distribution des rôles
   currentRevealIndex: number; // Index du joueur qui voit son rôle
-  
+
   // Discussion
   discussionTimeLeft: number;
-  
+
   // Vote
   currentVoterIndex: number; // Index du joueur qui vote
   votes: UndercoverVote[];
   lastEliminatedId: string | null;
-  
+
   // Égalité
   tiedPlayerIds: string[]; // Joueurs à égalité pour revote
   isRevote: boolean;
-  
+
   // Mr White
   mrWhiteGuessCorrect: boolean | null;
-  
+
   // Historique
   eliminationHistory: UndercoverEliminationEntry[];
-  
+
   // État
   isGameStarted: boolean;
   isGameFinished: boolean;
