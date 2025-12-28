@@ -75,6 +75,7 @@ interface UseUndercoverGame {
 
   // Actions de vote
   submitVote: (targetId: string) => void;
+  eliminatePlayer: (playerId: string) => void; // Vote de groupe direct
 
   // Actions post-vote
   confirmVoteResult: () => void;
@@ -320,6 +321,22 @@ export const useUndercoverGame = (): UseUndercoverGame => {
       currentVoterIndex: 0,
       votes: [],
     }));
+  }, []);
+
+  /**
+   * Élimine directement un joueur (vote de groupe)
+   * Le groupe décide ensemble qui éliminer
+   */
+  const eliminatePlayer = useCallback((playerId: string) => {
+    setState((prev) => {
+      return {
+        ...prev,
+        phase: "elimination",
+        lastEliminatedId: playerId,
+        tiedPlayerIds: [],
+        isRevote: false,
+      };
+    });
   }, []);
 
   /**
@@ -658,6 +675,7 @@ export const useUndercoverGame = (): UseUndercoverGame => {
     startDiscussion,
     skipDiscussionTimer,
     submitVote,
+    eliminatePlayer,
     confirmVoteResult,
     confirmElimination,
     submitMrWhiteGuess,

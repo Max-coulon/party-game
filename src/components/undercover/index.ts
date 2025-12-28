@@ -2,6 +2,7 @@ export { UndercoverSetup } from "./UndercoverSetup";
 export { UndercoverRoleReveal } from "./UndercoverRoleReveal";
 export { UndercoverDiscussion } from "./UndercoverDiscussion";
 export { UndercoverVote } from "./UndercoverVote";
+export { UndercoverGroupVote } from "./UndercoverGroupVote";
 export { UndercoverVoteResult } from "./UndercoverVoteResult";
 export { UndercoverElimination } from "./UndercoverElimination";
 export { UndercoverMrWhiteGuess } from "./UndercoverMrWhiteGuess";

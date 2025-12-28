@@ -103,41 +103,23 @@ export const UndercoverRoleReveal: React.FC<UndercoverRoleRevealProps> = ({
           </p>
         </div>
       ) : (
-        // Affichage du rôle
+        // Affichage du mot (sans révéler le rôle)
         <div className="space-y-6 animate-scale-in">
-          {/* Carte de rôle */}
+          {/* Carte du mot */}
           <div
             className={`relative p-6 rounded-3xl border-2 shadow-2xl ${
-              player.role === "civil"
-                ? "bg-gradient-to-br from-blue-900/80 to-blue-950/80 border-blue-500/50"
-                : player.role === "undercover"
-                ? "bg-gradient-to-br from-red-900/80 to-red-950/80 border-red-500/50"
+              player.word
+                ? "bg-gradient-to-br from-primary-900/80 to-primary-950/80 border-primary-500/50"
                 : "bg-gradient-to-br from-purple-900/80 to-purple-950/80 border-purple-500/50"
             }`}
           >
-            {/* Badge rôle */}
+            {/* Icône */}
             <div className="text-center mb-6">
               <span className="text-6xl block mb-3">
-                {player.role === "civil"
-                  ? "👤"
-                  : player.role === "undercover"
-                  ? "🕵️"
-                  : "👻"}
+                {player.word ? "🎯" : "👻"}
               </span>
-              <h3
-                className={`text-2xl font-bold ${
-                  player.role === "civil"
-                    ? "text-blue-400"
-                    : player.role === "undercover"
-                    ? "text-red-400"
-                    : "text-purple-400"
-                }`}
-              >
-                {player.role === "civil"
-                  ? "CIVIL"
-                  : player.role === "undercover"
-                  ? "UNDERCOVER"
-                  : "MR WHITE"}
+              <h3 className="text-2xl font-bold text-primary-400">
+                {player.word ? "TON MOT" : "MR WHITE"}
               </h3>
             </div>
 
@@ -145,7 +127,7 @@ export const UndercoverRoleReveal: React.FC<UndercoverRoleRevealProps> = ({
             <div className="text-center py-4 px-6 bg-black/30 rounded-2xl">
               {player.word ? (
                 <>
-                  <p className="text-dark-400 text-sm mb-2">Ton mot :</p>
+                  <p className="text-dark-400 text-sm mb-2">Mémorise bien :</p>
                   <p className="text-4xl font-bold text-white">
                     {player.word}
                   </p>
@@ -162,28 +144,20 @@ export const UndercoverRoleReveal: React.FC<UndercoverRoleRevealProps> = ({
               )}
             </div>
 
-            {/* Instructions selon le rôle */}
+            {/* Instructions génériques */}
             <div className="mt-6 p-4 bg-black/20 rounded-xl">
               <p className="text-dark-300 text-sm text-center">
-                {player.role === "civil" && (
+                {player.word ? (
                   <>
-                    🎯 Trouve l'Undercover sans te faire repérer !
+                    🎭 Décris ton mot de façon subtile.
                     <br />
-                    Décris ton mot de façon subtile.
+                    Pas trop précis, pas trop vague !
                   </>
-                )}
-                {player.role === "undercover" && (
-                  <>
-                    🎭 Fais semblant d'être un Civil !
-                    <br />
-                    Adapte-toi aux descriptions des autres.
-                  </>
-                )}
-                {player.role === "mrwhite" && (
+                ) : (
                   <>
                     👻 Passe inaperçu jusqu'à la fin !
                     <br />
-                    Si tu es éliminé, devine le mot des Civils pour gagner.
+                    Si tu es éliminé, devine le mot pour gagner.
                   </>
                 )}
               </p>

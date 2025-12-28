@@ -7,8 +7,7 @@ import {
   UndercoverSetup,
   UndercoverRoleReveal,
   UndercoverDiscussion,
-  UndercoverVote,
-  UndercoverVoteResult,
+  UndercoverGroupVote,
   UndercoverElimination,
   UndercoverMrWhiteGuess,
   UndercoverGameEnd,
@@ -22,15 +21,12 @@ const UndercoverScreen: React.FC = () => {
   const {
     state,
     currentRevealPlayer,
-    currentVoter,
-    alivePlayers,
     lastEliminated,
     startGame,
     goBackToSetup,
     confirmRoleSeen,
     skipDiscussionTimer,
-    submitVote,
-    confirmVoteResult,
+    eliminatePlayer,
     confirmElimination,
     submitMrWhiteGuess,
     resetGame,
@@ -68,11 +64,6 @@ const UndercoverScreen: React.FC = () => {
     // Relancer avec les mêmes joueurs mais on retourne au setup pour changer les mots si besoin
     // Ou on peut directement relancer
   };
-
-  // Joueurs à égalité pour le résultat du vote
-  const tiedPlayers = state.tiedPlayerIds
-    .map((id) => state.players.find((p) => p.id === id))
-    .filter(Boolean) as typeof state.players;
 
   return (
     <PageContainer>
@@ -122,32 +113,16 @@ const UndercoverScreen: React.FC = () => {
           />
         )}
 
-        {/* Phase 4: Vote (pass-and-play) */}
-        {state.phase === "voting" && currentVoter && (
-          <UndercoverVote
-            voter={currentVoter}
-            voterIndex={state.currentVoterIndex}
-            totalVoters={alivePlayers.length}
-            candidates={alivePlayers}
-            allowSelfVote={state.config.rules.allowSelfVote}
-            tiedPlayerIds={state.tiedPlayerIds}
-            isRevote={state.isRevote}
-            onVote={submitVote}
-          />
-        )}
-
-        {/* Phase 5: Résultat du vote */}
-        {state.phase === "voteResult" && (
-          <UndercoverVoteResult
+        {/* Phase 4: Vote de groupe */}
+        {state.phase === "voting" && (
+          <UndercoverGroupVote
             players={state.players}
-            eliminatedPlayer={lastEliminated}
-            tiedPlayers={tiedPlayers}
-            isRevote={state.isRevote && state.tiedPlayerIds.length > 1}
-            onConfirm={confirmVoteResult}
+            currentRound={state.currentRound}
+            onEliminate={eliminatePlayer}
           />
         )}
 
-        {/* Phase 6: Élimination */}
+        {/* Phase 5: Élimination */}
         {state.phase === "elimination" && lastEliminated && (
           <UndercoverElimination
             eliminatedPlayer={lastEliminated}
@@ -156,7 +131,7 @@ const UndercoverScreen: React.FC = () => {
           />
         )}
 
-        {/* Phase 7: Mr White devine */}
+        {/* Phase 6: Mr White devine */}
         {state.phase === "mrWhiteGuess" && lastEliminated && (
           <UndercoverMrWhiteGuess
             mrWhiteName={lastEliminated.name}
@@ -164,7 +139,7 @@ const UndercoverScreen: React.FC = () => {
           />
         )}
 
-        {/* Phase 8: Fin de partie */}
+        {/* Phase 7: Fin de partie */}
         {state.phase === "gameEnd" && (
           <UndercoverGameEnd
             summary={getSummary()}
