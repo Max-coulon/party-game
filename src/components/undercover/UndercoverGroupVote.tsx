@@ -8,7 +8,7 @@ interface UndercoverGroupVoteProps {
 }
 
 /**
- * Écran de vote de groupe - On choisit directement qui éliminer
+ * Écran de vote de groupe - On clique pour révéler le rôle puis éliminer
  */
 export const UndercoverGroupVote: React.FC<UndercoverGroupVoteProps> = ({
   players,
@@ -16,14 +16,14 @@ export const UndercoverGroupVote: React.FC<UndercoverGroupVoteProps> = ({
   onEliminate,
 }) => {
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showRoleReveal, setShowRoleReveal] = useState(false);
 
   // Joueurs vivants (candidats à l'élimination)
   const candidates = players.filter((p) => !p.isEliminated);
 
   const handleSelectPlayer = (playerId: string) => {
     setSelectedTarget(playerId);
-    setShowConfirm(true);
+    setShowRoleReveal(true);
   };
 
   const handleConfirmElimination = () => {
@@ -34,10 +34,52 @@ export const UndercoverGroupVote: React.FC<UndercoverGroupVoteProps> = ({
 
   const handleCancel = () => {
     setSelectedTarget(null);
-    setShowConfirm(false);
+    setShowRoleReveal(false);
   };
 
   const selectedPlayer = players.find((p) => p.id === selectedTarget);
+
+  // Fonction pour obtenir le nom du rôle en français
+  const getRoleName = (role: string) => {
+    switch (role) {
+      case "civil":
+        return "Civil";
+      case "undercover":
+        return "Undercover";
+      case "mrwhite":
+        return "Mr White";
+      default:
+        return role;
+    }
+  };
+
+  // Fonction pour obtenir la couleur du rôle
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "civil":
+        return "from-blue-500 to-blue-700";
+      case "undercover":
+        return "from-red-500 to-red-700";
+      case "mrwhite":
+        return "from-purple-500 to-purple-700";
+      default:
+        return "from-gray-500 to-gray-700";
+    }
+  };
+
+  // Fonction pour obtenir l'émoji du rôle
+  const getRoleEmoji = (role: string) => {
+    switch (role) {
+      case "civil":
+        return "👤";
+      case "undercover":
+        return "🕵️";
+      case "mrwhite":
+        return "👻";
+      default:
+        return "❓";
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -48,9 +90,9 @@ export const UndercoverGroupVote: React.FC<UndercoverGroupVoteProps> = ({
           <span className="text-white font-semibold">Manche {currentRound}</span>
         </div>
         
-        <h2 className="text-2xl font-bold text-white">Qui est l'Undercover ?</h2>
+        <h2 className="text-2xl font-bold text-white">Qui éliminez-vous ?</h2>
         <p className="text-dark-400">
-          Discutez ensemble et choisissez qui éliminer
+          Vote oral : cliquez pour révéler le rôle
         </p>
       </div>
 
@@ -59,9 +101,9 @@ export const UndercoverGroupVote: React.FC<UndercoverGroupVoteProps> = ({
         <div className="flex items-start gap-3">
           <span className="text-xl">💡</span>
           <div className="text-sm">
-            <p className="text-primary-400 font-semibold mb-1">Vote de groupe</p>
+            <p className="text-primary-400 font-semibold mb-1">Décision de groupe</p>
             <p className="text-dark-300">
-              Débattez ensemble à voix haute, puis sélectionnez la personne que le groupe souhaite éliminer.
+              Discutez oralement pour choisir qui éliminer. Une fois décidé, cliquez sur le joueur pour révéler son rôle.
             </p>
           </div>
         </div>
@@ -78,65 +120,62 @@ export const UndercoverGroupVote: React.FC<UndercoverGroupVoteProps> = ({
             key={player.id}
             type="button"
             onClick={() => handleSelectPlayer(player.id)}
-            className={`w-full p-4 rounded-xl border-2 transition-all transform active:scale-98 ${
-              selectedTarget === player.id
-                ? "bg-red-500/20 border-red-500"
-                : "bg-dark-800/80 border-dark-700 hover:border-red-500/50 hover:bg-red-500/10"
-            }`}
+            className="w-full p-4 rounded-xl border-2 bg-dark-800/80 border-dark-700 hover:border-red-500/50 hover:bg-red-500/10 transition-all transform active:scale-98"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                    selectedTarget === player.id
-                      ? "bg-red-500"
-                      : "bg-dark-700"
-                  }`}
-                >
-                  {selectedTarget === player.id ? "💀" : "👤"}
+                <div className="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center text-2xl">
+                  👤
                 </div>
-                <span
-                  className={`font-semibold text-lg ${
-                    selectedTarget === player.id
-                      ? "text-red-400"
-                      : "text-white"
-                  }`}
-                >
+                <span className="font-semibold text-lg text-white">
                   {player.name}
                 </span>
               </div>
 
-              <span className="text-2xl">
-                {selectedTarget === player.id ? "❌" : "→"}
-              </span>
+              <span className="text-2xl">→</span>
             </div>
           </button>
         ))}
       </div>
 
-      {/* Modal de confirmation */}
-      {showConfirm && selectedPlayer && (
+      {/* Modal de révélation du rôle */}
+      {showRoleReveal && selectedPlayer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div 
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             onClick={handleCancel}
           />
-          <div className="relative z-10 w-full max-w-sm bg-gradient-to-br from-dark-800 to-dark-900 rounded-3xl shadow-2xl border-2 border-red-500/50 p-6 animate-scale-in">
-            {/* Icône */}
+          <div className="relative z-10 w-full max-w-sm bg-gradient-to-br from-dark-800 to-dark-900 rounded-3xl shadow-2xl border-2 border-primary-500/50 p-6 animate-scale-in">
+            {/* Nom du joueur */}
             <div className="text-center mb-4">
-              <span className="text-7xl block">⚠️</span>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {selectedPlayer.name}
+              </h3>
             </div>
 
-            {/* Message */}
+            {/* Révélation du rôle avec animation */}
+            <div className={`relative p-6 rounded-2xl bg-gradient-to-br ${getRoleColor(selectedPlayer.role)} mb-6 animate-pulse-slow`}>
+              <div className="text-center">
+                <span className="text-7xl block mb-3">
+                  {getRoleEmoji(selectedPlayer.role)}
+                </span>
+                <p className="text-white text-3xl font-bold mb-2">
+                  {getRoleName(selectedPlayer.role)}
+                </p>
+                {selectedPlayer.word && (
+                  <p className="text-white/80 text-lg">
+                    Mot : <span className="font-bold">{selectedPlayer.word}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Message selon le rôle */}
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Confirmer l'élimination ?
-              </h3>
-              <p className="text-dark-400">
-                Le groupe veut éliminer
-              </p>
-              <p className="text-3xl font-bold text-red-400 mt-2">
-                {selectedPlayer.name}
+              <p className="text-dark-300 text-sm">
+                {selectedPlayer.role === "civil" && "❌ Ce n'était pas l'Undercover !"}
+                {selectedPlayer.role === "undercover" && "✅ Vous avez trouvé l'Undercover !"}
+                {selectedPlayer.role === "mrwhite" && "👻 C'était Mr White !"}
               </p>
             </div>
 
