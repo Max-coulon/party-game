@@ -134,12 +134,27 @@
     text-wrap: balance;
   }
 
+  /*
+   * Zones sûres. `env()` vaut 0 sur un écran sans encoche : ces règles ne
+   * changent donc rien hors mobile à bords arrondis. On additionne au lieu de
+   * prendre le maximum, sinon le contenu vient coller exactement sous
+   * l'encoche, sans le moindre espace de respiration.
+   */
   .safe-bottom {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
   }
 
   .safe-top {
-    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+  }
+
+  /* Écran sans TopBar : c'est le contenu qui doit dégager l'encoche. */
+  .safe-page-top {
+    padding-top: calc(env(safe-area-inset-top) + 1.5rem);
+  }
+
+  .safe-page-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
   }
 }
 

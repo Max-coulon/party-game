@@ -12,7 +12,7 @@ export function MenuScreen() {
   useAccent(undefined)
 
   return (
-    <Screen className="pt-6">
+    <Screen safeTop>
       <header className="px-1">
         <p className="text-accent text-xs font-semibold tracking-[0.3em] uppercase">Party Game</p>
         <h1 className="mt-2 text-[2.75rem] leading-[0.95]">
