@@ -387,18 +387,58 @@ describe('liste de mots', () => {
   })
 
   it('propose assez de paires pour une longue soirée', () => {
-    expect(WORD_PAIRS.length).toBeGreaterThanOrEqual(450)
+    expect(WORD_PAIRS.length).toBeGreaterThanOrEqual(440)
   })
 
-  it('ne réutilise jamais le même mot des deux côtés de deux paires', () => {
-    // Un mot qui serait « civil » ici et « undercover » là dans le même thème
-    // ferait tomber la partie sur deux paires jouables identiques.
+  it('ne propose jamais deux fois la même paire', () => {
     const seen = new Map<string, string>()
     for (const pair of WORD_PAIRS) {
       const key = [normalizeGuess(pair.civil), normalizeGuess(pair.undercover)].sort().join('|')
       expect(seen.has(key)).toBe(false)
       seen.set(key, pair.id)
     }
+  })
+
+  it("n'emploie jamais le même mot dans deux paires différentes", () => {
+    // Un mot partagé par deux paires peut sortir deux fois dans la soirée, une
+    // fois côté civil et une fois côté undercover — les joueurs le
+    // reconnaissent et la partie perd tout son intérêt.
+    const owner = new Map<string, string>()
+    for (const pair of WORD_PAIRS) {
+      for (const word of [pair.civil, pair.undercover]) {
+        const key = normalizeGuess(word)
+        expect(owner.get(key) ?? pair.id).toBe(pair.id)
+        owner.set(key, pair.id)
+      }
+    }
+  })
+
+  it('écarte les mots que le joueur risque de lire de travers', () => {
+    // Le mot est affiché seul, sans son thème. Ceux-ci se lisent d'abord comme
+    // un verbe ou comme un tout autre objet : deux civils les comprendraient
+    // différemment et décriraient deux choses.
+    const ambigus = [
+      'applique',
+      'souris',
+      'coffre',
+      'essence',
+      'bleu',
+      'mousse',
+      'toast',
+      'broche',
+      'voile',
+      'basket',
+      'batterie',
+      'flute',
+      'manchot',
+      'judas',
+      'varan',
+      'blaireau',
+    ]
+    const employes = new Set(
+      WORD_PAIRS.flatMap((pair) => [normalizeGuess(pair.civil), normalizeGuess(pair.undercover)]),
+    )
+    for (const mot of ambigus) expect(employes.has(mot)).toBe(false)
   })
 
   it('filtre par thème', () => {
