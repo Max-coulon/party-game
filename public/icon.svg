@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Party Game">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="18%" r="80%">
+      <stop offset="0%" stop-color="#7c5cff" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#7c5cff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0b0a12" />
+  <rect width="512" height="512" fill="url(#glow)" />
+  <!-- Le sceau : le disque qu'on maintient pour révéler. -->
+  <circle cx="256" cy="256" r="132" fill="none" stroke="#7c5cff" stroke-opacity="0.45" stroke-width="14" />
+  <circle cx="256" cy="256" r="72" fill="#7c5cff" />
+</svg>
