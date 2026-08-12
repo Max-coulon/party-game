@@ -23,7 +23,7 @@ npm run dev        # http://localhost:5173
 
 | Jeu                 | Ce qu'on y fait                                                                                                                             |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Undercover**      | Chacun reçoit un mot, sauf les imposteurs qui en ont un autre — et Mr White qui n'en a aucun. On décrit, on vote, on élimine. 410 paires sur 15 thèmes. |
+| **Undercover**      | Chacun reçoit un mot, sauf les imposteurs qui en ont un autre — et Mr White qui n'en a aucun. On décrit, on vote, on élimine. 458 paires sur 15 thèmes. |
 | **Je n'ai jamais**  | Trois intensités, six thèmes. Ceux qui l'ont fait boivent. Deux règles spéciales doublent la mise.                                            |
 | **Action ou Vérité** | Trois intensités, 150 cartes. Refuser coûte des gorgées.                                                                                     |
 | **Fais deviner**    | En équipes, au chrono. Preset **Time's Up** (3 manches sur le même paquet) ou **Mix** (manches et paquets au choix), 6 façons de faire deviner. |

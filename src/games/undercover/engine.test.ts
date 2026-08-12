@@ -387,7 +387,7 @@ describe('liste de mots', () => {
   })
 
   it('propose assez de paires pour une longue soirée', () => {
-    expect(WORD_PAIRS.length).toBeGreaterThanOrEqual(380)
+    expect(WORD_PAIRS.length).toBeGreaterThanOrEqual(440)
   })
 
   it('ne propose jamais deux fois la même paire', () => {
