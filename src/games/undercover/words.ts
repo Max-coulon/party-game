@@ -44,14 +44,28 @@ export const THEME_LABELS: Record<WordTheme, string> = {
 }
 
 /**
- * Calibrage de chaque paire, appliqué sans exception :
- *  — les deux mots appartiennent à la même famille et partagent au moins deux
- *    attributs descriptibles (usage, lieu, forme) ;
- *  — ils divergent sur au moins un attribut net dès qu'on creuse ;
- *  — pas de synonymes (« stress » / « anxiété » : indiscernables, donc injouable),
- *    pas de mot générique face à son propre exemple (« chien » / « animal »),
- *    pas d'écart tel que l'undercover se grille à sa première description
- *    (« chocolat » / « sel »).
+ * Chaque paire passe cinq filtres. Les trois premiers portent sur la relation
+ * entre les deux mots, les deux derniers sur chaque mot pris isolément — ce
+ * sont eux qu'on oublie le plus facilement.
+ *
+ * 1. Même famille : les deux mots partagent au moins deux attributs
+ *    descriptibles (usage, lieu, forme).
+ * 2. Un écart net : ils divergent sur au moins un attribut dès qu'on creuse.
+ *    Pas de synonymes — « stress » / « anxiété » est indiscernable, donc
+ *    injouable — ni de mot générique face à son propre exemple
+ *    (« chien » / « animal »).
+ * 3. Pas de gouffre : « chocolat » / « sel » grille l'undercover dès sa
+ *    première description.
+ * 4. Aucun mot ambigu hors contexte. Le joueur voit le mot seul, sans le
+ *    thème : « applique » se lit comme un verbe, « souris » comme un sourire,
+ *    « batterie » désigne autant l'instrument que la pile. Deux civils qui
+ *    lisent différemment le même mot décrivent deux choses — la partie est
+ *    cassée avant d'avoir commencé.
+ * 5. Aucun mot qu'il faille expliquer. « Judas » pour un viseur de porte ou
+ *    « varan » pour un lézard arrêtent la partie le temps d'une définition.
+ *
+ * S'y ajoute une contrainte globale, vérifiée par les tests : un mot donné
+ * n'apparaît que dans une seule paire de toute la liste.
  */
 const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
   nourriture: [
@@ -85,10 +99,8 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Spaghetti', 'Ravioli'],
     ['Barbecue', 'Raclette'],
     ['Sandwich', 'Wrap'],
-    ['Tarte', 'Clafoutis'],
     ['Pain de mie', 'Biscotte'],
     ['Beignet', 'Churros'],
-    ['Frites', 'Nuggets'],
     ['Camembert', 'Mozzarella'],
     ['Saucisson', 'Pâté'],
     ["Sirop d'érable", 'Caramel'],
@@ -105,7 +117,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Bière', 'Cidre'],
     ['Vin rouge', 'Champagne'],
     ['Whisky', 'Rhum'],
-    ['Limonade', 'Sirop'],
     ["Jus d'orange", 'Smoothie'],
     ['Eau minérale', 'Tisane'],
     ['Chocolat chaud', 'Cappuccino'],
@@ -116,11 +127,8 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Punch', 'Sangria'],
     ['Apéritif', 'Digestif'],
     ['Thé glacé', 'Citronnade'],
-    ['Rosé', 'Vin blanc'],
     ['Gin', 'Cognac'],
     ['Kir', 'Mojito'],
-    ['Eau de coco', 'Jus de pomme'],
-    ['Bubble tea', 'Frappé'],
   ],
   objets: [
     ['Parapluie', 'Casquette'],
@@ -146,9 +154,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Corde', 'Chaîne'],
     ['Marteau', 'Tournevis'],
     ['Torchon', 'Gant de cuisine'],
-    ['Cintre', 'Panier'],
-    ['Tirelire', 'Coffret'],
-    ['Aiguille', 'Punaise'],
     ['Règle', 'Compas'],
     ['Gomme', 'Taille-crayon'],
     ['Pince à linge', 'Trombone'],
@@ -163,7 +168,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Table', 'Bureau'],
     ['Chaise', 'Tabouret'],
     ['Armoire', 'Commode'],
-    ['Étagère', 'Coffre'],
     ['Rideau', 'Store'],
     ['Tapis', 'Paillasson'],
     ['Cheminée', 'Radiateur'],
@@ -180,13 +184,9 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Jardin', 'Piscine'],
     ['Matelas', 'Couette'],
     ['Oreiller', 'Plaid'],
-    ['Lampadaire', 'Applique'],
     ['Plafond', 'Plancher'],
     ['Mur', 'Toit'],
-    ['Poêle à bois', 'Climatiseur'],
-    ['Terrasse', 'Cour'],
     ['Buanderie', 'Dressing'],
-    ['Sonnette', 'Judas'],
     ['Volet', 'Moustiquaire'],
     ['Robinet', 'Pommeau de douche'],
   ],
@@ -209,19 +209,15 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Zoo', 'Aquarium'],
     ['Prison', 'Commissariat'],
     ['Banque', 'Bureau de poste'],
-    ['Coiffeur', 'Tatoueur'],
+    ['Salon de coiffure', 'Salon de tatouage'],
     ['Station-service', 'Péage'],
     ['Ferme', 'Vignoble'],
     ['Île', 'Volcan'],
     ['Village', 'Banlieue'],
     ['Grotte', 'Tunnel'],
     ['Piscine municipale', 'Patinoire'],
-    ['Salle de concert', 'Salle des fêtes'],
     ['Casino', 'Hippodrome'],
-    ['Cimetière', 'Monument aux morts'],
     ['Mairie', 'Tribunal'],
-    ['Caserne', 'Gendarmerie'],
-    ['Auberge de jeunesse', "Chambre d'hôtes"],
     ['Port', 'Phare'],
     ['Verger', 'Serre'],
     ['Marché de Noël', 'Brocante'],
@@ -235,7 +231,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Poule', 'Canard'],
     ['Cochon', 'Sanglier'],
     ['Lapin', 'Écureuil'],
-    ['Souris', 'Taupe'],
     ['Lion', 'Ours'],
     ['Éléphant', 'Hippopotame'],
     ['Girafe', 'Autruche'],
@@ -249,7 +244,7 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Papillon', 'Libellule'],
     ['Araignée', 'Scorpion'],
     ['Aigle', 'Pigeon'],
-    ['Manchot', 'Phoque'],
+    ['Pingouin', 'Phoque'],
     ['Chameau', 'Kangourou'],
     ['Rose', 'Tournesol'],
     ['Chêne', 'Sapin'],
@@ -259,13 +254,10 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Rivière', 'Cascade'],
     ['Océan', 'Étang'],
     ['Sable', 'Boue'],
-    ['Champignon', 'Mousse'],
     ['Cerf', 'Bison'],
-    ['Hérisson', 'Blaireau'],
     ['Chauve-souris', 'Hibou'],
     ['Corbeau', 'Mouette'],
     ['Cygne', 'Flamant rose'],
-    ['Crocodile', 'Varan'],
     ['Panda', 'Koala'],
     ['Zèbre', 'Antilope'],
     ['Escargot', 'Ver de terre'],
@@ -279,33 +271,26 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
   ],
   sport: [
     ['Football', 'Rugby'],
-    ['Basket', 'Handball'],
+    ['Basket-ball', 'Handball'],
     ['Tennis', 'Badminton'],
     ['Golf', 'Pétanque'],
     ['Natation', 'Plongée'],
     ['Ski', 'Luge'],
-    ['Patinage', 'Escalade'],
     ['Boxe', 'Judo'],
     ['Marathon', 'Triathlon'],
-    ['Vélo', 'Trottinette'],
     ['Yoga', 'Musculation'],
     ['Danse', 'Gymnastique'],
-    ['Surf', 'Voile'],
-    ['Équitation', 'Rodéo'],
     ["Tir à l'arc", 'Fléchettes'],
     ['Bowling', 'Billard'],
     ['Escrime', 'Karaté'],
     ['Volley', 'Ping-pong'],
     ['Course à pied', 'Randonnée'],
     ['Aviron', 'Water-polo'],
-    ['Médaille', 'Trophée'],
     ['Arbitre', 'Entraîneur'],
     ['Squash', 'Padel'],
     ['Plongeon', 'Nage synchronisée'],
     ['Saut en longueur', 'Course de haies'],
-    ['Lutte', 'Sumo'],
     ['Football américain', 'Baseball'],
-    ['Cricket', 'Hockey sur gazon'],
     ['Motocross', 'Rallye'],
     ['Alpinisme', 'Spéléologie'],
     ['Parapente', 'Saut en parachute'],
@@ -317,7 +302,7 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Film', 'Série'],
     ['Concert', 'Festival'],
     ['Guitare', 'Violon'],
-    ['Piano', 'Batterie'],
+    ['Piano', 'Orgue'],
     ['Peinture', 'Sculpture'],
     ['Photo', 'Dessin'],
     ['Opéra', 'Comédie musicale'],
@@ -336,11 +321,10 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Fresque', 'Mosaïque'],
     ['Ballet', 'Cabaret'],
     ['Poème', 'Fable'],
-    ["Galerie d'art", 'Vitrine'],
     ['Exposition', 'Conférence'],
     ['Vinyle', 'Cassette'],
     ['Trompette', 'Accordéon'],
-    ['Flûte', 'Harpe'],
+    ['Violoncelle', 'Harpe'],
     ['Court-métrage', 'Publicité'],
     ['Manga', 'Comics'],
     ['Jeu de rôle', 'Escape game'],
@@ -382,7 +366,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Jardinier', 'Bûcheron'],
     ['Berger', 'Apiculteur'],
     ['Guide touristique', 'Réceptionniste'],
-    ['Douanier', 'Pompiste'],
   ],
   transports: [
     ['Voiture', 'Camion'],
@@ -395,7 +378,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Taxi', 'Ambulance'],
     ['Trottinette', 'Skateboard'],
     ['Montgolfière', 'Parachute'],
-    ['Téléphérique', 'Tapis roulant'],
     ['Autoroute', 'Rond-point'],
     ['Feu rouge', 'Panneau stop'],
     ['Ceinture de sécurité', 'Airbag'],
@@ -403,12 +385,9 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Camping-car', 'Tente'],
     ['Camionnette', 'Tracteur'],
     ['Scooter', 'Quad'],
-    ['Funiculaire', 'Navette'],
     ['Ferry', 'Voilier'],
     ['Planeur', 'Dirigeable'],
     ['Passage piéton', 'Trottoir'],
-    ['Coffre', 'Rétroviseur'],
-    ['Essence', 'Recharge électrique'],
     ['Bagage à main', 'Soute'],
   ],
   corps: [
@@ -422,7 +401,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Rhume', 'Migraine'],
     ['Fièvre', 'Allergie'],
     ['Vaccin', 'Pansement'],
-    ['Sommeil', 'Rêve'],
     ['Éternuement', 'Hoquet'],
     ['Sourire', "Clin d'œil"],
     ['Larme', 'Sueur'],
@@ -435,7 +413,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Foie', 'Rein'],
     ['Sang', 'Salive'],
     ['Toux', 'Courbature'],
-    ['Cicatrice', 'Bleu'],
     ['Sieste', 'Insomnie'],
   ],
   mode: [
@@ -444,7 +421,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Chemise', 'T-shirt'],
     ['Pull', 'Veste'],
     ['Manteau', 'Imperméable'],
-    ['Basket', 'Sandale'],
     ['Botte', 'Chausson'],
     ['Chaussette', 'Collant'],
     ['Écharpe', 'Gant'],
@@ -460,10 +436,8 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Jean', 'Salopette'],
     ['Débardeur', 'Polo'],
     ['Escarpin', 'Mocassin'],
-    ['Casquette', 'Béret'],
-    ["Boucle d'oreille", 'Broche'],
+    ['Casquette de baseball', 'Béret'],
     ['Rouge à lèvres', 'Mascara'],
-    ['Peignoir', 'Combinaison'],
   ],
   tech: [
     ['Téléphone', 'Tablette'],
@@ -480,17 +454,11 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Réveil', 'Minuteur'],
     ['GPS', 'Boussole'],
     ['Robot', 'Intelligence artificielle'],
-    ['Batterie', 'Chargeur'],
     ['Clé USB', 'Disque dur'],
     ['Écran tactile', 'Télécommande'],
-    ['Souris', 'Webcam'],
     ['Micro', 'Trépied'],
     ['Liseuse', 'Montre connectée'],
     ['Carte SIM', 'Carte bancaire'],
-    ['Antivirus', 'Sauvegarde'],
-    ['Streaming', 'Téléchargement'],
-    ['Code source', 'Base de données'],
-    ['Casque VR', 'Console portable'],
     ['Panneau solaire', 'Éolienne'],
   ],
   social: [
@@ -502,8 +470,7 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Invitation', 'Faire-part'],
     ['Apéro', 'Brunch'],
     ['Pique-nique', 'Buffet'],
-    ['Toast', 'Discours'],
-    ['Bougie', 'Confettis'],
+    ['Confettis', 'Guirlande'],
     ['Photo de groupe', 'Selfie'],
     ['Colocation', 'Voisinage'],
     ['Rendez-vous', 'Réunion'],
@@ -524,7 +491,6 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Compliment', 'Reproche'],
   ],
   abstrait: [
-    ['Courage', 'Fierté'],
     ['Jalousie', 'Curiosité'],
     ['Patience', 'Discipline'],
     ['Chance', 'Destin'],
@@ -539,17 +505,7 @@ const RAW_PAIRS: Record<WordTheme, readonly (readonly [string, string])[]> = {
     ['Ennui', 'Fatigue'],
     ['Ambition', 'Talent'],
     ['Réputation', 'Charisme'],
-    ['Regret', 'Nostalgie'],
-    ['Colère', 'Impatience'],
     ['Confiance', 'Respect'],
-    ['Honte', 'Timidité'],
-    ['Espoir', 'Illusion'],
-    ['Loyauté', 'Obéissance'],
-    ['Imagination', 'Intuition'],
-    ['Sacrifice', 'Effort'],
-    ['Pardon', 'Oubli'],
-    ['Rivalité', 'Méfiance'],
-    ['Sagesse', 'Expérience'],
     ['Coïncidence', 'Superstition'],
   ],
 }
