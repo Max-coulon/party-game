@@ -1,0 +1,193 @@
+@import 'tailwindcss';
+
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/instrument-sans';
+
+/* ---------------------------------------------------------------------------
+   Design tokens — « le jeton »
+   Fond encre-violet, une couleur par jeu qui suit le joueur du menu à la fin
+   de partie. L'accent est une variable runtime : les écrans d'un jeu la
+   redéfinissent sur leur racine, tout le reste en hérite.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-ink: #0b0a12;
+  --color-ink-raised: #16132a;
+  --color-ink-edge: #262042;
+  --color-chalk: #f4f1fb;
+  --color-muted: #9d95bd;
+  --color-danger: #ff5470;
+  --color-success: #3ddc97;
+
+  /* Redéfini par GameThemeProvider — voir shared/theme. */
+  --color-accent: var(--accent, #7c5cff);
+
+  --font-display: 'Bricolage Grotesque Variable', 'Trebuchet MS', sans-serif;
+  --font-sans: 'Instrument Sans Variable', system-ui, sans-serif;
+
+  --radius-card: 1.75rem;
+
+  --ease-spring: linear(
+    0,
+    0.42 8%,
+    0.85 17%,
+    1.05 25%,
+    1.09 30%,
+    1.01 45%,
+    0.99 55%,
+    1
+  );
+}
+
+@layer base {
+  :root {
+    --accent: #7c5cff;
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--color-ink);
+    color: var(--color-chalk);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    overscroll-behavior-y: none;
+  }
+
+  /* La nappe de lumière au-dessus du tapis. Suit l'accent du jeu courant. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        60rem 40rem at 50% -10%,
+        color-mix(in oklab, var(--accent) 22%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40rem 40rem at 110% 110%,
+        color-mix(in oklab, var(--accent) 10%, transparent),
+        transparent 70%
+      );
+    transition: background 600ms ease;
+  }
+
+  /* Le grain : évite l'aplat numérique parfait des dégradés. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.22;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 0.5rem;
+  }
+
+  input,
+  select {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .surface {
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--color-ink-raised) 92%, var(--accent)),
+      var(--color-ink)
+    );
+    border: 1px solid var(--color-ink-edge);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) rotate(-2.5deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 1.75rem transparent;
+  }
+}
+
+.animate-deal-in {
+  animation: deal-in 480ms var(--ease-spring) both;
+}
+
+.animate-rise {
+  animation: rise 320ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
