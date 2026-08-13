@@ -29,7 +29,7 @@ export function App() {
               <Route path="/je-n-ai-jamais" element={<NeverHaveIEverGame />} />
               <Route path="/action-ou-verite" element={<TruthOrDareGame />} />
               <Route path="/fais-deviner" element={<GuessGame />} />
-              <Route path="/tirage" element={<FingerPickerGame />} />
+              <Route path="/chooser" element={<FingerPickerGame />} />
               <Route path="*" element={<NotFoundScreen />} />
             </Route>
           </Routes>

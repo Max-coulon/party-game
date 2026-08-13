@@ -58,6 +58,17 @@ export default function FingerPickerGame() {
   const pointersRef = useRef(new Map<number, Finger>())
   const frameRef = useRef<number | null>(null)
 
+  // Les cercles sont positionnés dans la zone tactile, alors que le pointeur
+  // donne des coordonnées fenêtre : sans ce décalage, ils s'affichent plus bas
+  // que le doigt de toute la hauteur de la barre et des réglages.
+  const originRef = useRef({ left: 0, top: 0 })
+
+  const fingerAt = (event: ReactPointerEvent<HTMLDivElement>): Finger => ({
+    id: event.pointerId,
+    x: event.clientX - originRef.current.left,
+    y: event.clientY - originRef.current.top,
+  })
+
   const publish = useCallback(() => {
     if (frameRef.current !== null) return
     frameRef.current = requestAnimationFrame(() => {
@@ -81,22 +92,17 @@ export default function FingerPickerGame() {
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (status === 'result') return
     event.currentTarget.setPointerCapture(event.pointerId)
-    pointersRef.current.set(event.pointerId, {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    })
+    // Remesuré à chaque doigt posé : les réglages au-dessus changent de hauteur.
+    const { left, top } = event.currentTarget.getBoundingClientRect()
+    originRef.current = { left, top }
+    pointersRef.current.set(event.pointerId, fingerAt(event))
     publish()
   }
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const finger = pointersRef.current.get(event.pointerId)
     if (!finger) return
-    pointersRef.current.set(event.pointerId, {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    })
+    pointersRef.current.set(event.pointerId, fingerAt(event))
     publish()
   }
 
