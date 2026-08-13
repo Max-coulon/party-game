@@ -69,8 +69,8 @@ export function SetupScreen({
         />
         {names.length > 1 && (
           <p className="text-muted mt-3 px-1 text-xs">
-            Les mots seront distribués dans cet ordre. Réordonne la liste pour coller au tour de
-            table.
+            Les mots seront distribués dans cet ordre. Fais glisser une ligne par sa poignée pour
+            coller au tour de table.
           </p>
         )}
       </Panel>
