@@ -11,6 +11,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon.svg', 'apple-touch-icon.png'],
+      workbox: {
+        // Les woff2 ne font pas partie des extensions précachées par défaut :
+        // sans elles, les polices repartaient sur le réseau à chaque ouverture
+        // de l'app et le texte s'affichait d'abord dans la police système.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+      },
       manifest: {
         name: 'Party Game',
         short_name: 'Party',
