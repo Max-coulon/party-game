@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/shared/ui/Button'
 import { Panel } from '@/shared/ui/Panel'
 import { TimerBar } from '@/shared/ui/TimerBar'
@@ -7,6 +7,7 @@ import { useCountdown } from '@/shared/hooks/useCountdown'
 import { alivePlayers, playerById } from '../engine'
 import type { UndercoverState } from '../engine'
 import { EliminationHistory } from './EliminationHistory'
+import { PeekWordDialog } from './PeekWordDialog'
 
 interface DiscussionScreenProps {
   state: UndercoverState
@@ -14,6 +15,7 @@ interface DiscussionScreenProps {
 }
 
 export function DiscussionScreen({ state, onVote }: DiscussionScreenProps) {
+  const [peeking, setPeeking] = useState(false)
   const hasTimer = state.rules.discussionSeconds > 0
   const countdown = useCountdown(state.rules.discussionSeconds)
   const { start } = countdown
@@ -28,9 +30,14 @@ export function DiscussionScreen({ state, onVote }: DiscussionScreenProps) {
   return (
     <Screen
       footer={
-        <Button full onClick={onVote}>
-          Passer au vote
-        </Button>
+        <>
+          <Button full onClick={onVote}>
+            Passer au vote
+          </Button>
+          <Button full variant="ghost" size="md" onClick={() => setPeeking(true)}>
+            Revoir mon mot
+          </Button>
+        </>
       }
     >
       <header className="px-1 pt-2">
@@ -64,6 +71,8 @@ export function DiscussionScreen({ state, onVote }: DiscussionScreenProps) {
       </Panel>
 
       <EliminationHistory state={state} />
+
+      {peeking && <PeekWordDialog state={state} onClose={() => setPeeking(false)} />}
     </Screen>
   )
 }
