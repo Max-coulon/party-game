@@ -134,18 +134,15 @@ export function createGame(
   for (let i = 0; i < rules.mrWhiteCount; i += 1) roles.push('mrwhite')
   while (roles.length < names.length) roles.push('civil')
 
+  // Seuls les rôles sont mélangés : l'ordre des joueurs reste celui de la
+  // liste du setup, que l'on veut pouvoir régler pour le tour de table.
   const shuffledRoles = shuffle(roles, rng)
-  // L'ordre d'affichage est mélangé aussi : sinon la place à table trahit le rôle.
-  const seats = shuffle(
-    names.map((name, index) => ({ name, index })),
-    rng,
-  )
 
-  const players: UndercoverPlayer[] = seats.map((seat, index) => {
+  const players: UndercoverPlayer[] = names.map((name, index) => {
     const role = shuffledRoles[index] as Role
     return {
-      id: `p${seat.index}`,
-      name: seat.name,
+      id: `p${index}`,
+      name,
       role,
       word: role === 'mrwhite' ? null : role === 'undercover' ? pair.undercover : pair.civil,
       eliminated: false,

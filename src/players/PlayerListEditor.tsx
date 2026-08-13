@@ -18,6 +18,8 @@ interface PlayerListEditorProps {
   minPlayers: number
   /** Ajoute aussi le joueur au trombinoscope réutilisable entre les jeux. */
   syncToRoster?: boolean
+  /** Affiche la liste en colonne avec des flèches : pour les jeux où l'ordre compte. */
+  orderable?: boolean
 }
 
 export function PlayerListEditor({
@@ -25,6 +27,7 @@ export function PlayerListEditor({
   onChange,
   minPlayers,
   syncToRoster = true,
+  orderable = false,
 }: PlayerListEditorProps) {
   const { players: rosterPlayers, addPlayer: addToRoster } = useRoster()
   const [draft, setDraft] = useState('')
@@ -48,6 +51,15 @@ export function PlayerListEditor({
 
   const remove = (index: number) => {
     onChange(names.filter((_, i) => i !== index))
+  }
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= names.length) return
+    const next = [...names]
+    const [moved] = next.splice(index, 1)
+    next.splice(target, 0, moved as string)
+    onChange(next)
   }
 
   const importRoster = () => {
@@ -99,24 +111,67 @@ export function PlayerListEditor({
         </Button>
       )}
 
-      <ul className="flex flex-wrap gap-2">
-        {names.map((name, index) => (
-          <li key={`${name}-${index}`}>
-            <button
-              type="button"
-              onClick={() => remove(index)}
-              aria-label={`Retirer ${name}`}
-              className="bg-ink-raised border-ink-edge text-chalk flex min-h-10 items-center gap-2 rounded-full border pr-2 pl-3 text-sm"
+      {orderable ? (
+        <ol className="flex flex-col gap-2">
+          {names.map((name, index) => (
+            <li
+              key={`${name}-${index}`}
+              className="bg-ink-raised border-ink-edge flex min-h-12 items-center gap-1 rounded-2xl border pr-1 pl-3"
             >
-              <span aria-hidden>{avatarForIndex(index)}</span>
-              {name}
-              <span aria-hidden className="text-muted px-1 text-base leading-none">
-                ×
+              <span aria-hidden className="text-muted w-5 text-xs tabular-nums">
+                {index + 1}
               </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+              <span aria-hidden>{avatarForIndex(index)}</span>
+              <span className="text-chalk flex-1 truncate pl-1 text-sm">{name}</span>
+              <button
+                type="button"
+                onClick={() => move(index, -1)}
+                disabled={index === 0}
+                aria-label={`Monter ${name}`}
+                className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none disabled:opacity-25"
+              >
+                <span aria-hidden>↑</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => move(index, 1)}
+                disabled={index === names.length - 1}
+                aria-label={`Descendre ${name}`}
+                className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none disabled:opacity-25"
+              >
+                <span aria-hidden>↓</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                aria-label={`Retirer ${name}`}
+                className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none"
+              >
+                <span aria-hidden>×</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {names.map((name, index) => (
+            <li key={`${name}-${index}`}>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                aria-label={`Retirer ${name}`}
+                className="bg-ink-raised border-ink-edge text-chalk flex min-h-10 items-center gap-2 rounded-full border pr-2 pl-3 text-sm"
+              >
+                <span aria-hidden>{avatarForIndex(index)}</span>
+                {name}
+                <span aria-hidden className="text-muted px-1 text-base leading-none">
+                  ×
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {missingCount > 0 && (
         <p className="text-muted px-1 text-xs">
