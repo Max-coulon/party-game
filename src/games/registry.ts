@@ -50,10 +50,10 @@ export const GAMES: readonly GameMeta[] = [
   },
   {
     id: 'finger-picker',
-    name: 'Tirage au doigt',
+    name: 'Chooser',
     tagline: 'Tout le monde pose un doigt. Le sort tranche.',
     accent: '#ffd166',
-    path: '/tirage',
+    path: '/chooser',
     playersLabel: '2 doigts et plus',
     minPlayers: 2,
   },

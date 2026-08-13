@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Button } from '@/shared/ui/Button'
 import { Screen } from '@/shared/layout/Screen'
+import { flushTypingUndo } from '@/shared/lib/undo'
 import { playerById } from '../engine'
 import type { UndercoverState } from '../engine'
 
@@ -13,6 +14,11 @@ interface MrWhiteScreenProps {
 
 export function MrWhiteScreen({ state, onGuess, onContinue }: MrWhiteScreenProps) {
   const [guess, setGuess] = useState('')
+
+  // Le champ disparaît mais la partie continue : sans ça, secouer le téléphone
+  // proposerait d'annuler cette saisie jusqu'à la fin de la manche.
+  useEffect(() => flushTypingUndo, [])
+
   const mrWhite = state.mrWhiteGuessingId ? playerById(state, state.mrWhiteGuessingId) : undefined
   if (!mrWhite) return null
 

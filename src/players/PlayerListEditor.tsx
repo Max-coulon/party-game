@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@/shared/ui/Button'
 import { cn } from '@/shared/lib/cn'
+import { flushTypingUndo } from '@/shared/lib/undo'
 import { useRoster } from './rosterContext'
 import {
   MAX_NAME_LENGTH,
@@ -33,6 +34,10 @@ export function PlayerListEditor({
   const { players: rosterPlayers, addPlayer: addToRoster } = useRoster()
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<NameError>(null)
+
+  // Le champ disparaît quand la partie démarre : c'est le moment de solder la
+  // pile d'annulation d'iOS, sinon le secouage la réveille en pleine partie.
+  useEffect(() => flushTypingUndo, [])
 
   const full = names.length >= MAX_PLAYERS
 
