@@ -180,15 +180,6 @@
   }
 }
 
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 1.75rem transparent;
-  }
-}
-
 .animate-deal-in {
   animation: deal-in 480ms var(--ease-spring) both;
 }

@@ -32,15 +32,9 @@ export function VoteResultScreen({ state, onContinue }: VoteResultScreenProps) {
       <div className="surface rounded-card animate-deal-in flex flex-col items-center gap-3 p-6 text-center">
         <p className="text-muted text-xs tracking-[0.2em] uppercase">Éliminé</p>
         <p className="font-display text-4xl font-extrabold">{eliminated.name}</p>
+        {/* Le rôle seul : afficher son mot révélerait la paire à toute la table. */}
         {state.rules.revealRoleOnElimination ? (
-          <p className="text-accent text-lg font-semibold">
-            {ROLE_LABELS[eliminated.role]}
-            {eliminated.role !== 'mrwhite' && eliminated.word && (
-              <span className="text-muted block text-sm font-normal">
-                Son mot : {eliminated.word}
-              </span>
-            )}
-          </p>
+          <p className="text-accent text-lg font-semibold">{ROLE_LABELS[eliminated.role]}</p>
         ) : (
           <p className="text-muted text-sm">Son rôle restera secret jusqu'à la fin.</p>
         )}

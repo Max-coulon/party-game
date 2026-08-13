@@ -96,6 +96,13 @@ describe('distribution des rôles', () => {
     expect([...state.players.map((p) => p.name)].sort()).toEqual([...names].sort())
   })
 
+  it('garde l’ordre de la liste pour la distribution des mots', () => {
+    for (let seed = 0; seed < 20; seed += 1) {
+      const state = newGame(names, { undercoverCount: 1, mrWhiteCount: 1 }, seed)
+      expect(state.players.map((player) => player.name)).toEqual(names)
+    }
+  })
+
   it('ne fait jamais parler Mr White en premier', () => {
     for (let seed = 0; seed < 40; seed += 1) {
       const state = newGame(names, { undercoverCount: 1, mrWhiteCount: 1 }, seed)

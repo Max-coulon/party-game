@@ -61,7 +61,18 @@ export function SetupScreen({
       }
     >
       <Panel title="Joueurs" hint={names.length > 0 ? `${names.length}` : undefined}>
-        <PlayerListEditor names={names} onChange={onNamesChange} minPlayers={MIN_PLAYERS} />
+        <PlayerListEditor
+          names={names}
+          onChange={onNamesChange}
+          minPlayers={MIN_PLAYERS}
+          orderable
+        />
+        {names.length > 1 && (
+          <p className="text-muted mt-3 px-1 text-xs">
+            Les mots seront distribués dans cet ordre. Réordonne la liste pour coller au tour de
+            table.
+          </p>
+        )}
       </Panel>
 
       <Panel title="Rôles">
