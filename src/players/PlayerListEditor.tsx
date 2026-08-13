@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@/shared/ui/Button'
+import { cn } from '@/shared/lib/cn'
 import { useRoster } from './rosterContext'
 import {
   MAX_NAME_LENGTH,
@@ -18,7 +19,7 @@ interface PlayerListEditorProps {
   minPlayers: number
   /** Ajoute aussi le joueur au trombinoscope réutilisable entre les jeux. */
   syncToRoster?: boolean
-  /** Affiche la liste en colonne avec des flèches : pour les jeux où l'ordre compte. */
+  /** Liste en colonne réordonnable au doigt : pour les jeux où l'ordre compte. */
   orderable?: boolean
 }
 
@@ -51,15 +52,6 @@ export function PlayerListEditor({
 
   const remove = (index: number) => {
     onChange(names.filter((_, i) => i !== index))
-  }
-
-  const move = (index: number, direction: -1 | 1) => {
-    const target = index + direction
-    if (target < 0 || target >= names.length) return
-    const next = [...names]
-    const [moved] = next.splice(index, 1)
-    next.splice(target, 0, moved as string)
-    onChange(next)
   }
 
   const importRoster = () => {
@@ -112,46 +104,7 @@ export function PlayerListEditor({
       )}
 
       {orderable ? (
-        <ol className="flex flex-col gap-2">
-          {names.map((name, index) => (
-            <li
-              key={`${name}-${index}`}
-              className="bg-ink-raised border-ink-edge flex min-h-12 items-center gap-1 rounded-2xl border pr-1 pl-3"
-            >
-              <span aria-hidden className="text-muted w-5 text-xs tabular-nums">
-                {index + 1}
-              </span>
-              <span aria-hidden>{avatarForIndex(index)}</span>
-              <span className="text-chalk flex-1 truncate pl-1 text-sm">{name}</span>
-              <button
-                type="button"
-                onClick={() => move(index, -1)}
-                disabled={index === 0}
-                aria-label={`Monter ${name}`}
-                className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none disabled:opacity-25"
-              >
-                <span aria-hidden>↑</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => move(index, 1)}
-                disabled={index === names.length - 1}
-                aria-label={`Descendre ${name}`}
-                className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none disabled:opacity-25"
-              >
-                <span aria-hidden>↓</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                aria-label={`Retirer ${name}`}
-                className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none"
-              >
-                <span aria-hidden>×</span>
-              </button>
-            </li>
-          ))}
-        </ol>
+        <OrderableList names={names} onChange={onChange} onRemove={remove} />
       ) : (
         <ul className="flex flex-wrap gap-2">
           {names.map((name, index) => (
@@ -179,5 +132,170 @@ export function PlayerListEditor({
         </p>
       )}
     </div>
+  )
+}
+
+interface OrderableListProps {
+  names: string[]
+  onChange: (names: string[]) => void
+  onRemove: (index: number) => void
+}
+
+function swapped(names: readonly string[], from: number, to: number): string[] {
+  const next = [...names]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved as string)
+  return next
+}
+
+/**
+ * Réordonnancement au doigt. Les écouteurs vivent sur `window` et l'état du
+ * geste dans une ref : la ligne saisie est déplacée dans le DOM à chaque
+ * croisement, elle ne peut donc pas porter la capture du pointeur.
+ */
+function OrderableList({ names, onChange, onRemove }: OrderableListProps) {
+  const listRef = useRef<HTMLOListElement>(null)
+  // Le geste lit la liste à jour sans dépendre du cycle de rendu : un
+  // pointermove peut arriver avant que React n'ait commité l'échange précédent.
+  const namesRef = useRef(names)
+  useEffect(() => {
+    namesRef.current = names
+  }, [names])
+
+  const gesture = useRef({ pointerY: 0, index: 0, step: 0 })
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [offset, setOffset] = useState(0)
+
+  const dragging = dragIndex !== null
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= names.length) return
+    onChange(swapped(names, index, target))
+  }
+
+  const startDrag = (index: number, event: ReactPointerEvent<HTMLElement>) => {
+    const rows = listRef.current?.children
+    if (!rows || rows.length < 2) return
+    const row = rows[index] as HTMLElement | undefined
+    const neighbour = (rows[1] as HTMLElement).offsetTop - (rows[0] as HTMLElement).offsetTop
+    if (!row) return
+    // Le pas inclut l'écart entre deux lignes : on le mesure au lieu de le supposer.
+    gesture.current = { pointerY: event.clientY, index, step: Math.abs(neighbour) || row.offsetHeight }
+    setDragIndex(index)
+    setOffset(0)
+  }
+
+  useEffect(() => {
+    if (!dragging) return
+
+    const handleMove = (event: PointerEvent) => {
+      const { step } = gesture.current
+      let index = gesture.current.index
+      let dy = event.clientY - gesture.current.pointerY
+      let list = namesRef.current
+      let reordered = false
+
+      // Une ligne franchie = un échange, et le repère glisse d'autant.
+      while (dy > step / 2 && index < list.length - 1) {
+        list = swapped(list, index, index + 1)
+        index += 1
+        gesture.current.pointerY += step
+        dy -= step
+        reordered = true
+      }
+      while (dy < -step / 2 && index > 0) {
+        list = swapped(list, index, index - 1)
+        index -= 1
+        gesture.current.pointerY -= step
+        dy += step
+        reordered = true
+      }
+
+      // En butée, la ligne ne suit plus le doigt : sinon elle dérive hors de la
+      // liste, et il faudrait revenir sur toute la sur-course pour la rebouger.
+      const limit = step / 2
+      if (dy > limit) {
+        gesture.current.pointerY += dy - limit
+        dy = limit
+      } else if (dy < -limit) {
+        gesture.current.pointerY += dy + limit
+        dy = -limit
+      }
+
+      gesture.current.index = index
+      if (reordered) {
+        namesRef.current = list
+        onChange(list)
+      }
+      setDragIndex(index)
+      setOffset(dy)
+    }
+
+    const stop = () => {
+      setDragIndex(null)
+      setOffset(0)
+    }
+
+    window.addEventListener('pointermove', handleMove)
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
+    return () => {
+      window.removeEventListener('pointermove', handleMove)
+      window.removeEventListener('pointerup', stop)
+      window.removeEventListener('pointercancel', stop)
+    }
+  }, [dragging, onChange])
+
+  return (
+    <ol ref={listRef} className="flex flex-col gap-2">
+      {names.map((name, index) => {
+        const held = index === dragIndex
+        return (
+          <li
+            key={name}
+            style={held ? { transform: `translateY(${offset}px)` } : undefined}
+            className={cn(
+              'bg-ink-raised border-ink-edge relative flex min-h-12 items-center gap-1 rounded-2xl border pr-1 pl-1',
+              held && 'border-accent z-10 shadow-lg',
+            )}
+          >
+            <button
+              type="button"
+              onPointerDown={(event) => startDrag(index, event)}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  move(index, -1)
+                } else if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  move(index, 1)
+                }
+              }}
+              aria-label={`Déplacer ${name}, position ${index + 1} sur ${names.length}. Flèches haut et bas pour changer l'ordre.`}
+              className={cn(
+                'text-muted flex h-11 w-8 touch-none items-center justify-center text-base leading-none select-none',
+                held ? 'text-accent cursor-grabbing' : 'cursor-grab',
+              )}
+            >
+              <span aria-hidden>⠿</span>
+            </button>
+            <span aria-hidden className="text-muted w-4 text-xs tabular-nums">
+              {index + 1}
+            </span>
+            <span aria-hidden>{avatarForIndex(index)}</span>
+            <span className="text-chalk flex-1 truncate pl-1 text-sm">{name}</span>
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              aria-label={`Retirer ${name}`}
+              className="text-muted flex h-10 w-9 items-center justify-center text-lg leading-none"
+            >
+              <span aria-hidden>×</span>
+            </button>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
