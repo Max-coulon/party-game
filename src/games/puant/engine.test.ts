@@ -6,6 +6,7 @@ import {
   MIN_PLAYERS,
   activePlayers,
   createGame,
+  isFinalDuel,
   isSetupValid,
   puantReducer,
   puantHolder,
@@ -55,6 +56,14 @@ function checkInvariants(state: PuantState, expectedCards: number) {
 
   if (state.phase === 'pass' || state.phase === 'hand' || state.phase === 'draw') {
     expect([...state.fanOrder].sort()).toEqual([...(source?.hand ?? []).map((c) => c.id)].sort())
+
+    // Duel final : le porteur du puant ne pioche plus, il se fait piocher. Le
+    // contrôle ne vaut que sur un tour à jouer — juste après un tirage, celui
+    // qui vient de ramasser le puant le tient forcément.
+    if (isFinalDuel(state)) {
+      expect(turn?.hand.some((held) => held.id === PUANT_ID)).toBe(false)
+      expect(source?.hand.some((held) => held.id === PUANT_ID)).toBe(true)
+    }
   }
 }
 
@@ -206,6 +215,108 @@ describe('la pioche', () => {
     expect(puantReducer(state, { type: 'drawAt', position: 0 }, rng)).toBe(state)
     expect(puantReducer(state, { type: 'endTurn' }, rng)).toBe(state)
     expect(puantReducer(state, { type: 'openFan' }, rng)).toBe(state)
+  })
+})
+
+/**
+ * Une table réduite à deux : A tient le puant et la moitié d'une paire, B tient
+ * l'autre moitié, C est déjà sorti. C'est la forme obligée de toute fin de
+ * partie — le reste du paquet est toujours le puant plus des paires coupées en
+ * deux, une moitié chez chacun.
+ */
+function duel(turnIndex: number, overrides: Partial<PuantState> = {}): PuantState {
+  return {
+    phase: 'drawn',
+    rules: rules(),
+    players: [
+      {
+        id: 'p0',
+        name: 'A',
+        hand: [card('V-pique'), card('7-coeur')],
+        pairs: [],
+        out: false,
+        outAt: null,
+      },
+      { id: 'p1', name: 'B', hand: [card('7-carreau')], pairs: [], out: false, outAt: null },
+      { id: 'p2', name: 'C', hand: [], pairs: [], out: true, outAt: 1 },
+    ],
+    turnIndex,
+    sourceIndex: turnIndex === 0 ? 1 : 0,
+    fanOrder: [],
+    drawn: null,
+    matched: null,
+    wentOut: [],
+    turn: 5,
+    loserId: null,
+    ...overrides,
+  }
+}
+
+describe('le duel final', () => {
+  const rng = createRng(2)
+
+  it('saute le tour du porteur du puant', () => {
+    const after = puantReducer(duel(1), { type: 'endTurn' }, rng)
+
+    expect(isFinalDuel(after)).toBe(true)
+    expect(after.phase).toBe('pass')
+    // Le tour revenait à A, qui tient le puant : c'est B qui rejoue, chez A.
+    expect(after.players[after.turnIndex]?.name).toBe('B')
+    expect(after.players[after.sourceIndex]?.name).toBe('A')
+    expect([...after.fanOrder].sort()).toEqual(['7-coeur', 'V-pique'])
+  })
+
+  it('échange les rôles quand le puant change de mains', () => {
+    const fan = ['V-pique', '7-coeur']
+    const drawing = duel(1, { phase: 'draw', fanOrder: fan })
+    const drawn = puantReducer(drawing, { type: 'drawAt', position: 0 }, rng)
+    expect(drawn.drawn?.id).toBe(PUANT_ID)
+
+    const after = puantReducer(drawn, { type: 'endTurn' }, rng)
+    expect(after.players[after.turnIndex]?.name).toBe('A')
+    expect(after.players[after.sourceIndex]?.name).toBe('B')
+  })
+
+  it('se termine dès que celui qui pioche se vide', () => {
+    const drawing = duel(1, { phase: 'draw', fanOrder: ['V-pique', '7-coeur'] })
+    const drawn = puantReducer(drawing, { type: 'drawAt', position: 1 }, rng)
+    expect(drawn.matched).not.toBeNull()
+
+    const after = puantReducer(drawn, { type: 'endTurn' }, rng)
+    expect(after.phase).toBe('end')
+    expect(after.players.find((player) => player.id === after.loserId)?.name).toBe('A')
+  })
+
+  it('ne saute personne tant qu’il reste trois joueurs', () => {
+    const three = duel(2, {
+      players: [
+        {
+          id: 'p0',
+          name: 'A',
+          hand: [card('V-pique'), card('7-coeur')],
+          pairs: [],
+          out: false,
+          outAt: null,
+        },
+        {
+          id: 'p1',
+          name: 'B',
+          hand: [card('7-carreau'), card('8-coeur')],
+          pairs: [],
+          out: false,
+          outAt: null,
+        },
+        { id: 'p2', name: 'C', hand: [card('8-carreau')], pairs: [], out: false, outAt: null },
+      ],
+      sourceIndex: 1,
+    })
+
+    const after = puantReducer(three, { type: 'endTurn' }, rng)
+
+    expect(isFinalDuel(after)).toBe(false)
+    // A tient le puant et pioche quand même : le sauter le désignerait.
+    expect(after.players[after.turnIndex]?.name).toBe('A')
+    expect(after.players[after.sourceIndex]?.name).toBe('C')
   })
 })
 
