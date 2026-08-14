@@ -37,6 +37,22 @@ const PATHS: Record<GameId, ReactElement> = {
       <path d="M18 2a15.5 15.5 0 0 1 0 20" />
     </>
   ),
+  // Une grille de contacts, et le lien qu'on cherche entre eux.
+  reseau: (
+    <>
+      <circle cx="5" cy="5" r="1.6" />
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="19" cy="5" r="1.6" />
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="2.6" />
+      <circle cx="19" cy="12" r="1.6" />
+      <circle cx="5" cy="19" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+      <circle cx="19" cy="19" r="1.6" />
+      <path d="M6.4 6.4 10.2 10.2" />
+      <path d="M17.6 17.6 13.8 13.8" />
+    </>
+  ),
   // Une carte seule, et ce qui s'en échappe.
   puant: (
     <>
