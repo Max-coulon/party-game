@@ -21,7 +21,7 @@ export function MenuScreen() {
           tourne.
         </h1>
         <p className="text-muted mt-3 max-w-72 text-sm text-balance">
-          Six jeux qui se jouent à une seule table, avec un seul appareil qui passe de main en
+          Sept jeux qui se jouent à une seule table, avec un seul appareil qui passe de main en
           main.
         </p>
       </header>

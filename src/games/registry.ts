@@ -5,6 +5,7 @@ export type GameId =
   | 'guess'
   | 'finger-picker'
   | 'puant'
+  | 'reseau'
 
 export interface GameMeta {
   id: GameId
@@ -52,6 +53,15 @@ export const GAMES: readonly GameMeta[] = [
     accent: '#2ec4b6',
     path: '/fais-deviner',
     playersLabel: '4 joueurs et plus, en équipes',
+    minPlayers: 4,
+  },
+  {
+    id: 'reseau',
+    name: 'Le Réseau',
+    tagline: 'Un mot, un chiffre, et tout ton camp qui suit.',
+    accent: '#3a9bff',
+    path: '/le-reseau',
+    playersLabel: '4 joueurs et plus, en deux camps',
     minPlayers: 4,
   },
   {

@@ -188,6 +188,123 @@
   animation: rise 320ms ease-out both;
 }
 
+/* ---------------------------------------------------------------------------
+   Le Réseau — la grille qui se retourne
+   Une carte a deux faces : le mot d'un côté, l'appartenance de l'autre. Le
+   demi-tour se joue en CSS pur, sur un attribut de données, pour que la grille
+   reste 25 boutons et pas 25 composants animés à la main.
+--------------------------------------------------------------------------- */
+
+@layer utilities {
+  .flip-scene {
+    perspective: 900px;
+  }
+
+  .flip-inner {
+    transform-style: preserve-3d;
+    transition: transform 620ms var(--ease-spring);
+  }
+
+  .flip-inner[data-flipped='true'] {
+    transform: rotateY(180deg);
+  }
+
+  .flip-face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .flip-back {
+    transform: rotateY(180deg);
+  }
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* La nappe rouge qui recouvre l'écran quand la taupe se réveille. */
+@keyframes flood {
+  from {
+    clip-path: circle(0% at 50% 45%);
+  }
+  to {
+    clip-path: circle(150% at 50% 45%);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-0.6rem) rotate(-1deg);
+  }
+  30% {
+    transform: translateX(0.55rem) rotate(1deg);
+  }
+  45% {
+    transform: translateX(-0.4rem);
+  }
+  60% {
+    transform: translateX(0.3rem);
+  }
+  80% {
+    transform: translateX(-0.15rem);
+  }
+}
+
+/* Le halo de l'équipe qui a la main, et celui de la carte visée. */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+
+/* Le balayage de lumière sur la bannière d'indice. */
+@keyframes sweep {
+  from {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(260%) skewX(-18deg);
+  }
+}
+
+.animate-tile-in {
+  animation: tile-in 420ms var(--ease-spring) both;
+}
+
+.animate-flood {
+  animation: flood 720ms ease-out both;
+}
+
+.animate-shake {
+  animation: shake 620ms ease-in-out both;
+}
+
+.animate-breathe {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+.animate-sweep {
+  animation: sweep 2.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
