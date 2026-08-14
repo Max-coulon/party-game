@@ -2,7 +2,7 @@ import { Screen } from '@/shared/layout/Screen'
 import { Button } from '@/shared/ui/Button'
 import { PassGate } from '@/shared/ui/PassGate'
 import { joinNames, plural } from '@/shared/lib/format'
-import { currentPlayer, playerById, sourcePlayer } from '../engine'
+import { currentPlayer, isFinalDuel, playerById, sourcePlayer } from '../engine'
 import type { PuantState } from '../engine'
 import { CardFace } from './PlayingCard'
 
@@ -37,8 +37,14 @@ export function HandScreen({ state, onTake, onOpenFan }: HandScreenProps) {
         />
         {exits.length > 0 && (
           <p className="text-muted animate-rise text-center text-sm text-balance">
-            {joinNames(exits)} {exits.length > 1 ? "n'ont" : "n'a"} plus de cartes :{' '}
-            {exits.length > 1 ? 'sortis' : 'sorti'} du jeu.
+            {joinNames(exits)} {exits.length > 1 ? "n'ont" : "n'a"} plus de cartes : hors jeu.
+          </p>
+        )}
+
+        {isFinalDuel(state) && (
+          <p className="text-accent animate-rise text-center text-sm font-semibold text-balance">
+            Duel final. La carte en trop de {source.name}, c'est le valet de pique : {player.name}{' '}
+            pioche jusqu'à se vider — ou jusqu'à le ramasser.
           </p>
         )}
       </Screen>

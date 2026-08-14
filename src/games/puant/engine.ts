@@ -91,6 +91,28 @@ export const savedOrder = (state: PuantState): PuantPlayer[] =>
 export const puantHolder = (state: PuantState): PuantPlayer | undefined =>
   state.players.find((player) => player.hand.some((card) => card.id === PUANT_ID))
 
+const holdsPuant = (player: PuantPlayer | undefined): boolean =>
+  player?.hand.some((card) => card.id === PUANT_ID) ?? false
+
+/**
+ * Le duel final, à deux joueurs. Ce qui reste en jeu est toujours le puant plus
+ * des paires entières — la défausse ne sort que des paires complètes — et
+ * personne ne garde une paire en main : chacune de ces paires est donc coupée
+ * en deux, une moitié chez chaque joueur.
+ *
+ * Il en découle deux choses. Le porteur du puant a exactement une carte de plus
+ * que l'autre, donc tout le monde sait qui l'a : ça se compte, ici comme autour
+ * d'une vraie table. Et toutes les cartes de son adversaire ont leur jumelle
+ * dans sa propre main, donc s'il piochait il ferait une paire à tous les coups.
+ * Son tour n'aurait aucun enjeu : on le lui retire, et l'autre pioche jusqu'à
+ * se vider — ou jusqu'à ramasser le puant, ce qui échange les rôles.
+ *
+ * À trois joueurs et plus, sauter le tour de quelqu'un révélerait qu'il tient
+ * le puant : la règle ne vaut qu'à deux, là où l'information est déjà publique.
+ */
+export const isFinalDuel = (state: PuantState): boolean =>
+  state.phase !== 'end' && activePlayers(state).length === 2
+
 // — Mécanique ——————————————————————————————————————————————————————————
 
 /** Le premier joueur encore en jeu en partant de `from`, dans le sens `step`. */
@@ -141,13 +163,24 @@ function settle(state: PuantState, rng: Rng): PuantState {
   }
 
   const step = state.rules.direction === 'left' ? -1 : 1
-  const sourceIndex = neighbourIndex(state.players, state.turnIndex, step)
+  let turnIndex = state.turnIndex
+  let sourceIndex = neighbourIndex(state.players, turnIndex, step)
+
+  // Le duel final. Voir `isFinalDuel` : à deux, le porteur du puant ne pioche
+  // plus, c'est l'autre qui vient se servir chez lui jusqu'à se vider.
+  if (active.length === 2 && holdsPuant(state.players[turnIndex])) {
+    const holder = turnIndex
+    turnIndex = sourceIndex
+    sourceIndex = holder
+  }
+
   const source = state.players[sourceIndex]
   if (!source) return state
 
   return {
     ...state,
     phase: 'pass',
+    turnIndex,
     sourceIndex,
     // Remélangé à chaque présentation : sinon on retient « le puant était en
     // troisième position » d'un tour sur l'autre.
