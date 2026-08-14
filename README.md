@@ -1,6 +1,6 @@
 # Party Game
 
-Cinq jeux de soirée qui se jouent autour d'une table, avec un seul téléphone qui passe de main
+Six jeux de soirée qui se jouent autour d'une table, avec un seul téléphone qui passe de main
 en main. Application web installable (PWA), mobile-first, hors ligne, sans compte ni serveur.
 
 ## Démarrer
@@ -27,6 +27,7 @@ npm run dev        # http://localhost:5173
 | **Je n'ai jamais**  | Trois intensités, six thèmes. Ceux qui l'ont fait boivent. Deux règles spéciales doublent la mise.                                            |
 | **Action ou Vérité** | Trois intensités, 150 cartes. Refuser coûte des gorgées.                                                                                     |
 | **Fais deviner**    | En équipes, au chrono. Preset **Time's Up** (3 manches sur le même paquet) ou **Mix** (manches et paquets au choix), 6 façons de faire deviner. |
+| **Le Puant**        | Le pouilleux, mais à mains cachées sur un seul écran : on présente son éventail face cachée au voisin, qui tape un dos. Le dernier à tenir le valet de pique a perdu. |
 | **Tirage au doigt** | Tout le monde pose un doigt, le sort désigne — ou répartit tout le monde en équipes.                                                          |
 
 ## Architecture
@@ -58,6 +59,10 @@ la couleur dit où l'on est, elle ne décore pas.
 Le **sceau** est l'élément signature : tous les moments secrets (rôle Undercover, vote individuel)
 passent par une carte qu'il faut maintenir appuyée pour lire, et qui se referme au relâchement.
 Un téléphone posé sur la table n'affiche jamais le rôle de personne.
+
+Le Puant applique le même principe aux cartes : passé le sas, l'écran ne montre que la main de
+celui qui tient l'appareil, et l'éventail du voisin n'est qu'une grille de dos — remélangée à
+chaque présentation, pour que personne ne mémorise une position d'un tour sur l'autre.
 
 ## Ce qui est conservé sur l'appareil
 

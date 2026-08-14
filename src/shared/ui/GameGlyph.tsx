@@ -37,6 +37,16 @@ const PATHS: Record<GameId, ReactElement> = {
       <path d="M18 2a15.5 15.5 0 0 1 0 20" />
     </>
   ),
+  // Une carte seule, et ce qui s'en échappe.
+  puant: (
+    <>
+      <rect x="6.5" y="9" width="11" height="12.5" rx="2.5" />
+      <path d="M12 12.9l2.1 2.35L12 17.6l-2.1-2.35Z" />
+      <path d="M9.3 7c1-.85-1-1.7 0-2.55" />
+      <path d="M12 6.2c1-.85-1-1.7 0-2.55" />
+      <path d="M14.7 7c1-.85-1-1.7 0-2.55" />
+    </>
+  ),
   // Des doigts posés sur l'écran, et l'un d'eux entouré.
   'finger-picker': (
     <>

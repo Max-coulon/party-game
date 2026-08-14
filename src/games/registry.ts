@@ -1,4 +1,10 @@
-export type GameId = 'undercover' | 'never-have-i-ever' | 'truth-or-dare' | 'guess' | 'finger-picker'
+export type GameId =
+  | 'undercover'
+  | 'never-have-i-ever'
+  | 'truth-or-dare'
+  | 'guess'
+  | 'finger-picker'
+  | 'puant'
 
 export interface GameMeta {
   id: GameId
@@ -47,6 +53,15 @@ export const GAMES: readonly GameMeta[] = [
     path: '/fais-deviner',
     playersLabel: '4 joueurs et plus, en équipes',
     minPlayers: 4,
+  },
+  {
+    id: 'puant',
+    name: 'Le Puant',
+    tagline: 'Une carte ne se marie avec personne. Ne finis pas avec.',
+    accent: '#7fd858',
+    path: '/le-puant',
+    playersLabel: '3 à 8 joueurs',
+    minPlayers: 3,
   },
   {
     id: 'finger-picker',
