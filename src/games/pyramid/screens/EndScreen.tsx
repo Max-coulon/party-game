@@ -17,8 +17,6 @@ export function EndScreen({ state, onReplay, onNewSetup }: EndScreenProps) {
   const rows = ranking(state)
   const champion = rows[0]
   const total = state.players.reduce((sum, player) => sum + player.received, 0)
-  const leftovers = state.history.filter((gift) => gift.source === 'leftover').length
-
   return (
     <Screen
       footer={
@@ -42,10 +40,7 @@ export function EndScreen({ state, onReplay, onNewSetup }: EndScreenProps) {
             : 'Personne n’a touché un verre.'}
         </h2>
         <p className="text-muted mt-3 text-sm text-balance">
-          {plural(total, 'gorgée')} en tout
-          {leftovers > 0
-            ? `, dont ${plural(leftovers, 'carte')} encore en main`
-            : ''}.
+          {plural(total, 'gorgée')} en tout.
         </p>
       </header>
 

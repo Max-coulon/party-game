@@ -1,7 +1,6 @@
 /**
- * Le paquet de la Pyramide. Rien n'est retiré : tout ce qui n'est pas posé
- * sur la table part dans les mains, et c'est précisément ce qu'on joue contre
- * les cartes retournées.
+ * Le paquet de la Pyramide. Quatre cartes partent en main, une par une, le
+ * triangle se pose avec ce qui reste. Rien n'est retiré avant la donne.
  */
 
 export type Suit = 'pique' | 'coeur' | 'carreau' | 'trefle'

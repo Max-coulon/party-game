@@ -3,11 +3,17 @@ import { Screen } from '@/shared/layout/Screen'
 import { Button } from '@/shared/ui/Button'
 import { Panel } from '@/shared/ui/Panel'
 import { SegmentedControl } from '@/shared/ui/SegmentedControl'
-import { Toggle } from '@/shared/ui/Toggle'
 import { plural } from '@/shared/lib/format'
-import { MAX_PLAYERS, MIN_PLAYERS, ROW_OPTIONS, isSetupValid, pyramidCount } from '../engine'
+import {
+  HAND_SIZE,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  ROW_OPTIONS,
+  cardsNeeded,
+  isSetupValid,
+  pyramidCount,
+} from '../engine'
 import type { PyramidRows, PyramidRules } from '../engine'
-import { deckCount } from '../cards'
 import type { DeckSize } from '../cards'
 
 interface SetupScreenProps {
@@ -27,9 +33,7 @@ export function SetupScreen({
 }: SetupScreenProps) {
   const ready = isSetupValid(names.length, rules)
   const triangle = pyramidCount(rules.rows)
-  const rest = deckCount(rules.deckSize) - triangle
-  const perPlayer = names.length > 0 ? Math.floor(rest / names.length) : 0
-  const leftover = names.length > 0 ? rest % names.length : 0
+  const needed = cardsNeeded(names.length, rules)
 
   return (
     <Screen
@@ -37,8 +41,8 @@ export function SetupScreen({
         <>
           {names.length >= MIN_PLAYERS && !ready && (
             <p className="text-danger text-center text-xs text-balance">
-              Trop de joueurs pour ce triangle : il ne resterait plus une carte chacun. Réduis la
-              pyramide, ou prends le jeu de 52.
+              {needed} cartes nécessaires, {rules.deckSize} dans le paquet. Réduis la pyramide, ou
+              prends le jeu de 52.
             </p>
           )}
           <Button full disabled={!ready} onClick={onStart}>
@@ -48,13 +52,10 @@ export function SetupScreen({
       }
     >
       <Panel title="Joueurs" hint={names.length > 0 ? `${names.length}` : undefined}>
-        <PlayerListEditor
-          names={names}
-          onChange={onNamesChange}
-          minPlayers={MIN_PLAYERS}
-        />
+        <PlayerListEditor names={names} onChange={onNamesChange} minPlayers={MIN_PLAYERS} />
         <p className="text-muted/70 mt-3 text-xs text-balance">
-          Deux suffisent. Au-delà de {MAX_PLAYERS}, plus personne n'a de main.
+          Deux suffisent. Chacun reçoit {HAND_SIZE} cartes, une par une, avant la pyramide. Au-delà
+          de {MAX_PLAYERS} joueurs, le paquet n'y suffit plus.
         </p>
       </Panel>
 
@@ -71,36 +72,28 @@ export function SetupScreen({
             }))}
           />
           <p className="text-muted text-xs text-balance">
-            On commence au sommet : une gorgée. La base en vaut {rules.rows}.
+            On commence au sommet : une gorgée. La base en vaut {rules.rows}. Accuser un menteur
+            double la mise.
           </p>
         </div>
       </Panel>
 
       <Panel title="Le paquet">
-        <div className="flex flex-col gap-4">
-          <SegmentedControl<DeckSize>
-            label="Jeu de cartes"
-            value={rules.deckSize}
-            onChange={(deckSize) => onRulesChange({ ...rules, deckSize })}
-            options={[
-              { value: 52, label: 'Complète', hint: '52 cartes' },
-              { value: 32, label: 'Express', hint: '32 cartes' },
-            ]}
-          />
-          <Toggle
-            label="Les cartes gardées se paient"
-            description="À la fin, une gorgée par carte encore en main."
-            checked={rules.leftoverSips}
-            onChange={(leftoverSips) => onRulesChange({ ...rules, leftoverSips })}
-          />
-        </div>
+        <SegmentedControl<DeckSize>
+          label="Jeu de cartes"
+          value={rules.deckSize}
+          onChange={(deckSize) => onRulesChange({ ...rules, deckSize })}
+          options={[
+            { value: 52, label: 'Complète', hint: '52 cartes' },
+            { value: 32, label: 'Express', hint: '32 cartes' },
+          ]}
+        />
       </Panel>
 
       {ready && (
         <p className="text-muted/70 px-1 text-center text-xs text-balance">
-          {plural(perPlayer, 'carte')} chacun
-          {leftover > 0 ? `, ${plural(leftover, 'joueur')} en auront une de plus` : ''}. Le
-          téléphone tourne le temps de voir sa main, puis il reste au centre.
+          {HAND_SIZE} cartes chacun à deviner — couleur, plus ou moins, inter ou exter, puis le
+          signe — ensuite un triangle de {plural(triangle, 'carte')}.
         </p>
       )}
     </Screen>

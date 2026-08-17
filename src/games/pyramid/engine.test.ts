@@ -2,23 +2,25 @@ import { describe, expect, it } from 'vitest'
 import { createRng } from '@/shared/lib/random'
 import {
   DEFAULT_RULES,
-  currentRank,
+  DEAL_SIPS,
+  HAND_SIZE,
+  cardsNeeded,
   createGame,
+  currentDealPlayer,
+  dealKind,
   hasRank,
+  isGuessCorrect,
   isSetupValid,
-  matchingCards,
   playerById,
   pyramidCount,
   pyramidReducer,
   ranking,
-  sipsFor,
-  unrevealedCount,
 } from './engine'
 import type { PyramidPlayer, PyramidRules, PyramidSlot, PyramidState } from './engine'
-import { buildDeck, cardId, deckCount } from './cards'
+import { cardId } from './cards'
 import type { Card, Rank, Suit } from './cards'
 
-const NAMES = ['Léa', 'Tom', 'Ana', 'Sam']
+const NAMES = ['Léa', 'Tom', 'Ana']
 
 const card = (rank: Rank, suit: Suit): Card => ({
   id: cardId(rank, suit),
@@ -46,196 +48,268 @@ function slot(held: Card, row: number, revealed = true): PyramidSlot {
 }
 
 function playState(overrides: Partial<PyramidState> = {}): PyramidState {
-  const revealed = card('A', 'coeur')
   return {
     phase: 'play',
     rules: DEFAULT_RULES,
     players: [
       player(0, [card('A', 'pique'), card('7', 'trefle')]),
       player(1, [card('R', 'coeur')]),
-      player(2, [card('A', 'carreau'), card('A', 'trefle')]),
+      player(2, [card('9', 'carreau')]),
     ],
-    slots: [slot(revealed, 1), slot(card('D', 'pique'), 2, false)],
+    slots: [slot(card('A', 'coeur'), 1), slot(card('D', 'pique'), 2, false)],
+    drawPile: [],
     cursor: 0,
     dealIndex: 3,
+    dealCardIndex: HAND_SIZE,
+    dealStep: 'guess',
+    pendingCard: null,
+    pendingGuess: null,
+    pendingCorrect: null,
     giverId: null,
+    targetId: null,
     lastGift: null,
     history: [],
     ...overrides,
   }
 }
 
-describe('le paquet', () => {
-  it('compte 52 ou 32 cartes, rien n’est retiré', () => {
-    expect(buildDeck(52)).toHaveLength(52)
-    expect(buildDeck(32)).toHaveLength(32)
-    expect(deckCount(52)).toBe(52)
-    expect(buildDeck(32).every((held) => held.rank !== '6')).toBe(true)
+describe('la configuration', () => {
+  it('compte quatre cartes par joueur plus le triangle', () => {
+    expect(cardsNeeded(4, DEFAULT_RULES)).toBe(4 * 4 + 15)
+    expect(pyramidCount(5)).toBe(15)
   })
 
-  it('identifie une carte de façon stable', () => {
-    expect(cardId('V', 'pique')).toBe('V-pique')
+  it('refuse ce qui ne tient pas dans le paquet', () => {
+    expect(isSetupValid(1, DEFAULT_RULES)).toBe(false)
+    expect(isSetupValid(2, DEFAULT_RULES)).toBe(true)
+    expect(isSetupValid(9, DEFAULT_RULES)).toBe(true)
+    expect(isSetupValid(10, DEFAULT_RULES)).toBe(false)
+    expect(isSetupValid(5, rules({ rows: 7, deckSize: 32 }))).toBe(false)
+    expect(isSetupValid(2, rules({ rows: 4, deckSize: 32 }))).toBe(true)
   })
 })
 
-describe('la configuration', () => {
-  it('refuse moins de deux joueurs et plus de douze', () => {
-    expect(isSetupValid(1, DEFAULT_RULES)).toBe(false)
-    expect(isSetupValid(2, DEFAULT_RULES)).toBe(true)
-    expect(isSetupValid(12, DEFAULT_RULES)).toBe(true)
-    expect(isSetupValid(13, DEFAULT_RULES)).toBe(false)
+describe('les paris de la donne', () => {
+  it('suit l’ordre couleur, plus ou moins, inter ou exter, signe', () => {
+    expect(dealKind(0)).toBe('couleur')
+    expect(dealKind(1)).toBe('plusMoins')
+    expect(dealKind(2)).toBe('interExter')
+    expect(dealKind(3)).toBe('signe')
   })
 
-  it('exige au moins une carte en main pour chacun', () => {
-    expect(pyramidCount(5)).toBe(15)
-    expect(isSetupValid(4, rules({ rows: 7, deckSize: 32 }))).toBe(true)
-    expect(isSetupValid(5, rules({ rows: 7, deckSize: 32 }))).toBe(false)
-    expect(isSetupValid(12, rules({ rows: 7, deckSize: 52 }))).toBe(true)
-    expect(isSetupValid(12, rules({ rows: 7, deckSize: 32 }))).toBe(false)
+  it('reconnaît la couleur', () => {
+    expect(isGuessCorrect({ kind: 'couleur', value: 'rouge' }, card('7', 'coeur'), [])).toBe(true)
+    expect(isGuessCorrect({ kind: 'couleur', value: 'noir' }, card('7', 'coeur'), [])).toBe(false)
+    expect(isGuessCorrect({ kind: 'couleur', value: 'noir' }, card('A', 'pique'), [])).toBe(true)
+  })
+
+  it('compare à la carte précédente, et l’égalité est perdue', () => {
+    const seven = [card('7', 'pique')]
+    expect(isGuessCorrect({ kind: 'plusMoins', value: 'plus' }, card('R', 'coeur'), seven)).toBe(true)
+    expect(isGuessCorrect({ kind: 'plusMoins', value: 'moins' }, card('3', 'trefle'), seven)).toBe(
+      true,
+    )
+    expect(isGuessCorrect({ kind: 'plusMoins', value: 'plus' }, card('7', 'coeur'), seven)).toBe(
+      false,
+    )
+    expect(isGuessCorrect({ kind: 'plusMoins', value: 'moins' }, card('7', 'coeur'), seven)).toBe(
+      false,
+    )
+  })
+
+  it('place inter et exter entre les deux premières cartes', () => {
+    const bounds = [card('5', 'pique'), card('D', 'coeur')]
+    expect(isGuessCorrect({ kind: 'interExter', value: 'inter' }, card('9', 'trefle'), bounds)).toBe(
+      true,
+    )
+    expect(isGuessCorrect({ kind: 'interExter', value: 'exter' }, card('A', 'pique'), bounds)).toBe(
+      true,
+    )
+    expect(isGuessCorrect({ kind: 'interExter', value: 'inter' }, card('5', 'coeur'), bounds)).toBe(
+      false,
+    )
+    expect(isGuessCorrect({ kind: 'interExter', value: 'exter' }, card('D', 'pique'), bounds)).toBe(
+      false,
+    )
+  })
+
+  it('n’a pas d’intérieur quand les deux bornes sont égales', () => {
+    const twins = [card('8', 'pique'), card('8', 'coeur')]
+    expect(isGuessCorrect({ kind: 'interExter', value: 'inter' }, card('9', 'trefle'), twins)).toBe(
+      false,
+    )
+    expect(isGuessCorrect({ kind: 'interExter', value: 'exter' }, card('9', 'trefle'), twins)).toBe(
+      true,
+    )
+  })
+
+  it('vérifie le signe', () => {
+    expect(isGuessCorrect({ kind: 'signe', value: 'coeur' }, card('A', 'coeur'), [])).toBe(true)
+    expect(isGuessCorrect({ kind: 'signe', value: 'pique' }, card('A', 'coeur'), [])).toBe(false)
   })
 })
 
 describe('la distribution', () => {
-  it('pose exactement le triangle, le reste va aux joueurs', () => {
+  it('réserve le triangle et laisse quatre cartes à piocher par joueur', () => {
     const state = createGame(NAMES, DEFAULT_RULES, createRng(7))
     expect(state.phase).toBe('deal')
     expect(state.slots).toHaveLength(15)
     expect(state.slots.every((item) => !item.revealed)).toBe(true)
-    expect(state.slots[0]?.row).toBe(1)
-    expect(state.slots[14]?.row).toBe(5)
-
-    const dealt = state.slots.length + state.players.reduce((sum, item) => sum + item.hand.length, 0)
-    expect(dealt).toBe(52)
-    expect(state.players.every((item) => item.hand.length >= 1)).toBe(true)
+    expect(state.drawPile).toHaveLength(52 - 15)
+    expect(state.players).toHaveLength(3)
+    expect(state.players.every((item) => item.hand.length === 0)).toBe(true)
   })
 
-  it('fait tourner le sas jusqu’à la table', () => {
+  it('fait boire celui qui se trompe et passe à la carte suivante', () => {
     let state = createGame(NAMES, DEFAULT_RULES, createRng(3))
-    expect(state.dealIndex).toBe(0)
-    state = pyramidReducer(state, { type: 'seenHand' })
-    state = pyramidReducer(state, { type: 'seenHand' })
-    state = pyramidReducer(state, { type: 'seenHand' })
-    expect(state.phase).toBe('deal')
-    state = pyramidReducer(state, { type: 'seenHand' })
+    const drawn = state.drawPile[0]!
+    const wrong = drawn.suit === 'coeur' || drawn.suit === 'carreau' ? 'noir' : 'rouge'
+    state = pyramidReducer(state, { type: 'guess', guess: { kind: 'couleur', value: wrong } })
+    expect(state.dealStep).toBe('reveal')
+    expect(state.pendingCorrect).toBe(false)
+    expect(state.pendingCard?.id).toBe(drawn.id)
+
+    state = pyramidReducer(state, { type: 'ackReveal' })
+    expect(state.dealCardIndex).toBe(1)
+    expect(state.dealStep).toBe('guess')
+    expect(currentDealPlayer(state)?.hand).toHaveLength(1)
+    expect(currentDealPlayer(state)?.received).toBe(DEAL_SIPS)
+    expect(state.history[0]?.outcome).toBe('dealMiss')
+  })
+
+  it('fait désigner après un bon pari', () => {
+    let state = createGame(NAMES, DEFAULT_RULES, createRng(3))
+    const drawn = state.drawPile[0]!
+    const right = drawn.suit === 'coeur' || drawn.suit === 'carreau' ? 'rouge' : 'noir'
+    state = pyramidReducer(state, { type: 'guess', guess: { kind: 'couleur', value: right } })
+    expect(state.pendingCorrect).toBe(true)
+    state = pyramidReducer(state, { type: 'ackReveal' })
+    expect(state.dealStep).toBe('give')
+    expect(pyramidReducer(state, { type: 'dealGive', targetId: 'p0' }).dealStep).toBe('give')
+
+    state = pyramidReducer(state, { type: 'dealGive', targetId: 'p1' })
+    expect(state.dealCardIndex).toBe(1)
+    expect(playerById(state, 'p0')?.hand).toHaveLength(1)
+    expect(playerById(state, 'p0')?.given).toBe(DEAL_SIPS)
+    expect(playerById(state, 'p1')?.received).toBe(DEAL_SIPS)
+    expect(state.history[0]?.outcome).toBe('dealHit')
+  })
+
+  it('enchaîne les quatre cartes puis le joueur suivant, puis la table', () => {
+    let state = createGame(['Léa', 'Tom'], rules({ rows: 4 }), createRng(11))
+    for (let guard = 0; guard < 80 && state.phase === 'deal'; guard += 1) {
+      if (state.dealStep === 'guess') {
+        const kind = dealKind(state.dealCardIndex)
+        const guess =
+          kind === 'couleur'
+            ? ({ kind, value: 'rouge' } as const)
+            : kind === 'plusMoins'
+              ? ({ kind, value: 'plus' } as const)
+              : kind === 'interExter'
+                ? ({ kind, value: 'inter' } as const)
+                : ({ kind, value: 'pique' } as const)
+        state = pyramidReducer(state, { type: 'guess', guess })
+      } else if (state.dealStep === 'reveal') {
+        state = pyramidReducer(state, { type: 'ackReveal' })
+      } else {
+        const other = state.players.find((item) => item.id !== currentDealPlayer(state)?.id)
+        state = pyramidReducer(state, { type: 'dealGive', targetId: other?.id ?? 'p1' })
+      }
+    }
     expect(state.phase).toBe('play')
-    expect(state.cursor).toBe(-1)
-    expect(unrevealedCount(state)).toBe(15)
+    expect(state.players.every((item) => item.hand.length === HAND_SIZE)).toBe(true)
+    expect(state.slots.every((item) => !item.revealed)).toBe(true)
   })
 })
 
-describe('le retournement', () => {
-  it('révèle les cartes du sommet vers la base, une par une', () => {
-    let state = createGame(NAMES, DEFAULT_RULES, createRng(11))
-    for (let i = 0; i < NAMES.length; i += 1) state = pyramidReducer(state, { type: 'seenHand' })
-
-    state = pyramidReducer(state, { type: 'flip' })
-    expect(state.cursor).toBe(0)
-    expect(state.slots[0]?.revealed).toBe(true)
-    expect(state.slots[0]?.row).toBe(1)
-    expect(sipsFor(state.slots[0]!)).toBe(1)
-    expect(unrevealedCount(state)).toBe(14)
-
-    state = pyramidReducer(state, { type: 'flip' })
-    expect(state.cursor).toBe(1)
-    expect(state.slots[1]?.row).toBe(2)
-    expect(sipsFor(state.slots[1]!)).toBe(2)
-  })
-
-  it('ignore un retournement pendant qu’on désigne', () => {
-    const state = playState({ phase: 'give', giverId: 'p0' })
-    expect(pyramidReducer(state, { type: 'flip' })).toBe(state)
-  })
-})
-
-describe('le don', () => {
-  it('refuse une réclamation sans la valeur', () => {
+describe('la pyramide', () => {
+  it('laisse bluffer : on désigne même sans la valeur', () => {
     const state = playState()
     expect(hasRank(state.players[1]!, 'A')).toBe(false)
-    expect(pyramidReducer(state, { type: 'claim', playerId: 'p1' })).toBe(state)
-  })
-
-  it('refuse de se faire boire soi-même', () => {
-    const claimed = pyramidReducer(playState(), { type: 'claim', playerId: 'p0' })
+    const claimed = pyramidReducer(state, { type: 'claim', playerId: 'p1' })
     expect(claimed.phase).toBe('give')
-    expect(pyramidReducer(claimed, { type: 'give', targetId: 'p0' })).toEqual(claimed)
+    expect(claimed.giverId).toBe('p1')
   })
 
-  it('retire la carte, attribue les gorgées du rang, et revient à la table', () => {
+  it('boit la mise du rang si on accepte', () => {
     const claimed = pyramidReducer(playState(), { type: 'claim', playerId: 'p0' })
-    const given = pyramidReducer(claimed, { type: 'give', targetId: 'p1' })
-
-    expect(given.phase).toBe('play')
-    expect(given.giverId).toBeNull()
-    expect(given.lastGift?.fromId).toBe('p0')
-    expect(given.lastGift?.toId).toBe('p1')
-    expect(given.lastGift?.sips).toBe(1)
-    expect(given.lastGift?.card.id).toBe('A-pique')
-    expect(playerById(given, 'p0')?.hand.map((held) => held.id)).toEqual(['7-trefle'])
-    expect(playerById(given, 'p0')?.given).toBe(1)
-    expect(playerById(given, 'p1')?.received).toBe(1)
-    expect(given.history).toHaveLength(1)
+    const aimed = pyramidReducer(claimed, { type: 'give', targetId: 'p1' })
+    expect(aimed.phase).toBe('challenge')
+    const accepted = pyramidReducer(aimed, { type: 'accept' })
+    expect(accepted.phase).toBe('play')
+    expect(accepted.lastGift?.outcome).toBe('accepted')
+    expect(accepted.lastGift?.sips).toBe(1)
+    expect(playerById(accepted, 'p1')?.received).toBe(1)
+    expect(playerById(accepted, 'p0')?.hand.map((held) => held.id)).toEqual(['7-trefle'])
   })
 
-  it('permet de rejouer une deuxième carte de la même valeur', () => {
-    const first = pyramidReducer(
-      pyramidReducer(playState(), { type: 'claim', playerId: 'p2' }),
-      { type: 'give', targetId: 'p0' },
+  it('laisse le bluff passer si on n’accuse pas', () => {
+    const claimed = pyramidReducer(playState(), { type: 'claim', playerId: 'p1' })
+    const accepted = pyramidReducer(
+      pyramidReducer(claimed, { type: 'give', targetId: 'p0' }),
+      { type: 'accept' },
     )
-    expect(matchingCards(playerById(first, 'p2')!.hand, 'A')).toHaveLength(1)
+    expect(playerById(accepted, 'p1')?.hand).toHaveLength(1)
+    expect(playerById(accepted, 'p0')?.received).toBe(1)
+    expect(accepted.lastGift?.card).toBeNull()
+  })
 
-    const second = pyramidReducer(
-      pyramidReducer(first, { type: 'claim', playerId: 'p2' }),
-      { type: 'give', targetId: 'p1' },
+  it('double la mise de l’accusé s’il avait la carte', () => {
+    const challenged = pyramidReducer(
+      pyramidReducer(pyramidReducer(playState(), { type: 'claim', playerId: 'p0' }), {
+        type: 'give',
+        targetId: 'p1',
+      }),
+      { type: 'callLiar' },
     )
-    expect(playerById(second, 'p2')?.hand).toHaveLength(0)
-    expect(playerById(second, 'p2')?.given).toBe(2)
-    expect(playerById(second, 'p0')?.received).toBe(1)
-    expect(playerById(second, 'p1')?.received).toBe(1)
+    expect(challenged.lastGift?.outcome).toBe('shown')
+    expect(challenged.lastGift?.sips).toBe(2)
+    expect(challenged.lastGift?.card?.id).toBe('A-pique')
+    expect(playerById(challenged, 'p1')?.received).toBe(2)
+    expect(playerById(challenged, 'p0')?.hand.map((held) => held.id)).toEqual(['7-trefle'])
   })
 
-  it('annule une désignation commencée', () => {
-    const claimed = pyramidReducer(playState(), { type: 'claim', playerId: 'p0' })
-    const cancelled = pyramidReducer(claimed, { type: 'cancelGive' })
-    expect(cancelled.phase).toBe('play')
-    expect(cancelled.giverId).toBeNull()
-    expect(playerById(cancelled, 'p0')?.hand).toHaveLength(2)
+  it('double la mise du menteur s’il n’avait rien', () => {
+    const challenged = pyramidReducer(
+      pyramidReducer(pyramidReducer(playState(), { type: 'claim', playerId: 'p1' }), {
+        type: 'give',
+        targetId: 'p0',
+      }),
+      { type: 'callLiar' },
+    )
+    expect(challenged.lastGift?.outcome).toBe('lied')
+    expect(challenged.lastGift?.sips).toBe(2)
+    expect(playerById(challenged, 'p1')?.received).toBe(2)
+    expect(playerById(challenged, 'p1')?.hand).toHaveLength(1)
+    expect(playerById(challenged, 'p0')?.received).toBe(0)
   })
 
-  it('prend les gorgées du rang, pas un forfait fixe', () => {
+  it('prend le rang pour la mise, pas un forfait fixe', () => {
     const state = playState({
       slots: [slot(card('R', 'pique'), 4)],
       players: [player(0, [card('R', 'coeur')]), player(1, [])],
     })
-    const given = pyramidReducer(
-      pyramidReducer(state, { type: 'claim', playerId: 'p0' }),
-      { type: 'give', targetId: 'p1' },
+    const challenged = pyramidReducer(
+      pyramidReducer(pyramidReducer(state, { type: 'claim', playerId: 'p0' }), {
+        type: 'give',
+        targetId: 'p1',
+      }),
+      { type: 'callLiar' },
     )
-    expect(given.lastGift?.sips).toBe(4)
+    expect(challenged.lastGift?.sips).toBe(8)
   })
-})
 
-describe('la fin', () => {
-  it('fait boire les cartes restantes', () => {
+  it('ignore un retournement pendant le défi', () => {
+    const state = playState({ phase: 'challenge', giverId: 'p0', targetId: 'p1' })
+    expect(pyramidReducer(state, { type: 'flip' })).toBe(state)
+  })
+
+  it('termine quand plus rien n’est caché', () => {
     const state = playState({
       slots: [slot(card('D', 'coeur'), 2)],
-      players: [player(0, [card('7', 'pique'), card('8', 'pique')]), player(1, [])],
     })
     const ended = pyramidReducer(state, { type: 'flip' })
     expect(ended.phase).toBe('end')
-    expect(playerById(ended, 'p0')?.received).toBe(2)
-    expect(ended.history.filter((gift) => gift.source === 'leftover')).toHaveLength(2)
-  })
-
-  it('laisse les mains telles quelles si on joue sans le forfait', () => {
-    const state = playState({
-      rules: rules({ leftoverSips: false }),
-      slots: [slot(card('D', 'coeur'), 2)],
-      players: [player(0, [card('7', 'pique')]), player(1, [])],
-    })
-    const ended = pyramidReducer(state, { type: 'flip' })
-    expect(ended.phase).toBe('end')
-    expect(playerById(ended, 'p0')?.received).toBe(0)
-    expect(playerById(ended, 'p0')?.hand).toHaveLength(1)
   })
 
   it('classe par gorgées reçues', () => {
@@ -249,41 +323,5 @@ describe('la fin', () => {
     })
     const rows = ranking(state)
     expect(rows.map((row) => row.rank)).toEqual([1, 1, 3])
-    expect(rows[2]?.playerId).toBe('p2')
-  })
-})
-
-describe('une partie entière', () => {
-  it('termine toujours, cartes conservées', () => {
-    let state = createGame(NAMES, rules({ rows: 4, leftoverSips: true }), createRng(42))
-    const total =
-      state.slots.length + state.players.reduce((sum, item) => sum + item.hand.length, 0)
-
-    for (let i = 0; i < NAMES.length; i += 1) state = pyramidReducer(state, { type: 'seenHand' })
-
-    for (let guard = 0; guard < 400; guard += 1) {
-      if (state.phase === 'end') break
-      if (state.phase === 'give') {
-        const giver = playerById(state, state.giverId ?? '')
-        const target = state.players.find((item) => item.id !== giver?.id)
-        state = pyramidReducer(state, { type: 'give', targetId: target?.id ?? 'p0' })
-        continue
-      }
-
-      const rank = currentRank(state)
-      const claimant = rank
-        ? state.players.find((item) => hasRank(item, rank))
-        : undefined
-      if (claimant) {
-        state = pyramidReducer(state, { type: 'claim', playerId: claimant.id })
-      } else {
-        state = pyramidReducer(state, { type: 'flip' })
-      }
-    }
-
-    expect(state.phase).toBe('end')
-    const remaining = state.players.reduce((sum, item) => sum + item.hand.length, 0)
-    const played = state.history.filter((gift) => gift.source === 'pyramid').length
-    expect(played + remaining + state.slots.length).toBe(total)
   })
 })

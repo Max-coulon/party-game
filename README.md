@@ -29,7 +29,7 @@ npm run dev        # http://localhost:5173
 | **Fais deviner**    | En équipes, au chrono. Preset **Time's Up** (3 manches sur le même paquet) ou **Mix** (manches et paquets au choix), 6 façons de faire deviner. |
 | **Le Réseau**       | Deux camps, vingt-cinq mots posés sur la table, et un chef de réseau par camp — seul à savoir à qui ils sont. Il donne un mot et un chiffre, son équipe touche les cartes. La taupe met fin à la partie sur le champ. |
 | **Le Puant**        | Le pouilleux, mais à mains cachées sur un seul écran : on présente son éventail face cachée au voisin, qui tape un dos. Le dernier à tenir le valet de pique a perdu. |
-| **La Pyramide**     | Un triangle de cartes au centre de la table. On retourne du sommet vers la base : qui a la valeur la joue et désigne quelqu’un. Autant de gorgées que le rang. |
+| **La Pyramide**     | Quatre cartes à deviner une par une (couleur, plus ou moins, inter ou exter, signe), puis un triangle au centre. Qui dit avoir la valeur désigne quelqu’un — accusé de mentir, on boit double. |
 | **Tirage au doigt** | Tout le monde pose un doigt, le sort désigne — ou répartit tout le monde en équipes.                                                          |
 
 ## Architecture
@@ -66,9 +66,10 @@ Le Puant applique le même principe aux cartes : passé le sas, l'écran ne mont
 celui qui tient l'appareil, et l'éventail du voisin n'est qu'une grille de dos — remélangée à
 chaque présentation, pour que personne ne mémorise une position d'un tour sur l'autre.
 
-La Pyramide pose le téléphone au centre une fois les mains vues : le triangle se retourne
-là, et le sas ne revient que pour relire ses cartes. Les cartes encore en main à la fin se
-paient, pour que personne ne garde un as jusqu'au bout.
+La Pyramide commence le téléphone à la main : quatre paris, quatre cartes, le sas entre
+chaque joueur. Puis l'appareil reste au centre. On peut bluffer sur une valeur retournée ;
+celui qu'on désigne a le droit d'accuser. Vérité montrée ou mensonge démasqué, la mise
+double.
 
 Le Réseau est l'autre jeu où le téléphone reste au centre de la table : il n'en part que le temps
 pour un chef de réseau de voir sa clé, et il y revient sans elle. Là, l'accent ne dit plus le jeu

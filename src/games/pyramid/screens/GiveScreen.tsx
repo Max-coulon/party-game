@@ -2,9 +2,8 @@ import { Screen } from '@/shared/layout/Screen'
 import { Button } from '@/shared/ui/Button'
 import { plural } from '@/shared/lib/format'
 import { rankPhrase } from '../cards'
-import { currentSlot, matchingCards, playerById, sipsFor } from '../engine'
+import { currentSlot, playerById, sipsFor } from '../engine'
 import type { PyramidState } from '../engine'
-import { CardFace } from './PlayingCard'
 
 interface GiveScreenProps {
   state: PyramidState
@@ -17,8 +16,6 @@ export function GiveScreen({ state, onGive, onCancel }: GiveScreenProps) {
   const slot = currentSlot(state)
   if (!giver || !slot) return null
 
-  const matches = matchingCards(giver.hand, slot.card.rank)
-  const played = matches[0]
   const sips = sipsFor(slot)
   const others = state.players.filter((player) => player.id !== giver.id)
 
@@ -35,20 +32,12 @@ export function GiveScreen({ state, onGive, onCancel }: GiveScreenProps) {
         <p className="text-accent text-xs font-semibold tracking-[0.3em] uppercase">
           {giver.name}
         </p>
-        <h2 className="mt-2 text-3xl">À qui tu fais boire ?</h2>
+        <h2 className="mt-2 text-3xl">Qui tu désignes ?</h2>
         <p className="text-muted mt-2 text-sm text-balance">
-          {plural(sips, 'gorgée')} pour {rankPhrase(slot.card.rank)}.
-          {matches.length > 1
-            ? ` Tu en as ${matches.length} : tu rejoueras juste après.`
-            : ''}
+          Tu dis avoir {rankPhrase(slot.card.rank)}. La personne désignée pourra t'accuser de
+          mentir — et la mise passera à {plural(sips * 2, 'gorgée')}.
         </p>
       </header>
-
-      {played && (
-        <div className="flex justify-center">
-          <CardFace card={played} size="lg" className="w-28" />
-        </div>
-      )}
 
       <ul className="flex flex-col gap-2">
         {others.map((player) => (

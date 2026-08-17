@@ -13,23 +13,31 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { plural } from '@/shared/lib/format'
 import {
   DEFAULT_RULES,
+  HAND_SIZE,
   createGame,
+  currentDealPlayer,
   currentSlot,
-  hasRank,
   isSetupValid,
   pyramidReducer,
   unrevealedCount,
 } from './engine'
-import type { PyramidAction, PyramidRules, PyramidState } from './engine'
+import type { DealGuess, PyramidAction, PyramidRules, PyramidState } from './engine'
 import { SetupScreen } from './screens/SetupScreen'
 import { DealScreen } from './screens/DealScreen'
 import { TableScreen } from './screens/TableScreen'
 import { GiveScreen } from './screens/GiveScreen'
+import { ChallengeScreen } from './screens/ChallengeScreen'
 import { PeekHandDialog } from './screens/PeekHandDialog'
 import { EndScreen } from './screens/EndScreen'
 
 const GAME = gameById('pyramid')
 const SAVE_ID = 'pyramid'
+
+function readSave(): PyramidState | null {
+  const stored = readGameSave<PyramidState>(SAVE_ID)
+  if (!stored || !Array.isArray(stored.drawPile) || !stored.dealStep) return null
+  return stored
+}
 
 export default function PyramidGame() {
   useAccent(GAME.accent)
@@ -39,12 +47,9 @@ export default function PyramidGame() {
   const [rules, setRules] = usePersistentState<PyramidRules>('pyramid:rules', DEFAULT_RULES)
 
   const [state, setState] = useState<PyramidState | null>(null)
-  const [resumable, setResumable] = useState<PyramidState | null>(() =>
-    readGameSave<PyramidState>(SAVE_ID),
-  )
+  const [resumable, setResumable] = useState<PyramidState | null>(readSave)
   const [confirmQuit, setConfirmQuit] = useState(false)
   const [peeking, setPeeking] = useState(false)
-  const [failedId, setFailedId] = useState<string | null>(null)
 
   const finished = state?.phase === 'end'
   useGameSave(SAVE_ID, state, Boolean(finished))
@@ -60,7 +65,6 @@ export default function PyramidGame() {
       setState(createGame(names, nextRules))
       setResumable(null)
       setPeeking(false)
-      setFailedId(null)
     },
     [names],
   )
@@ -69,34 +73,17 @@ export default function PyramidGame() {
     setState(null)
     setResumable(null)
     setPeeking(false)
-    setFailedId(null)
     clearGameSave(SAVE_ID)
     setConfirmQuit(false)
   }, [])
 
-  const onClaim = useCallback(
-    (playerId: string) => {
-      if (!state) return
-      const slot = currentSlot(state)
-      const player = state.players.find((item) => item.id === playerId)
-      if (!slot?.revealed || !player || !hasRank(player, slot.card.rank)) {
-        setFailedId(playerId)
-        window.setTimeout(() => setFailedId((current) => (current === playerId ? null : current)), 620)
-        return
-      }
-      setFailedId(null)
-      dispatch({ type: 'claim', playerId })
-    },
-    [dispatch, state],
-  )
-
   const onFlip = useCallback(() => {
-    setFailedId(null)
     navigator.vibrate?.(24)
     dispatch({ type: 'flip' })
   }, [dispatch])
 
   if (!state && resumable) {
+    const dealer = currentDealPlayer(resumable)
     const hidden = unrevealedCount(resumable)
     return (
       <>
@@ -105,8 +92,8 @@ export default function PyramidGame() {
           <EmptyState
             title="Une pyramide est en cours"
             description={
-              resumable.phase === 'deal'
-                ? `Distribution : ${resumable.dealIndex + 1} / ${resumable.players.length}.`
+              resumable.phase === 'deal' && dealer
+                ? `Distribution : ${dealer.name}, carte ${resumable.dealCardIndex + 1} / ${HAND_SIZE}.`
                 : hidden === 0
                   ? 'Dernière carte retournée.'
                   : `${plural(hidden, 'carte')} encore face cachée.`
@@ -143,10 +130,11 @@ export default function PyramidGame() {
   }
 
   const slot = currentSlot(state)
+  const dealer = currentDealPlayer(state)
   const subtitle = finished
     ? 'Partie terminée'
-    : state.phase === 'deal'
-      ? `Distribution ${state.dealIndex + 1} / ${state.players.length}`
+    : state.phase === 'deal' && dealer
+      ? `${dealer.name} · carte ${state.dealCardIndex + 1} / ${HAND_SIZE}`
       : slot?.revealed
         ? `Rang ${slot.row} · ${plural(slot.row, 'gorgée')}`
         : `${unrevealedCount(state)} à retourner`
@@ -160,15 +148,19 @@ export default function PyramidGame() {
       />
 
       {state.phase === 'deal' && (
-        <DealScreen state={state} onSeen={() => dispatch({ type: 'seenHand' })} />
+        <DealScreen
+          state={state}
+          onGuess={(guess: DealGuess) => dispatch({ type: 'guess', guess })}
+          onAck={() => dispatch({ type: 'ackReveal' })}
+          onGive={(targetId) => dispatch({ type: 'dealGive', targetId })}
+        />
       )}
 
       {state.phase === 'play' && (
         <TableScreen
           state={state}
-          failedId={failedId}
           onFlip={onFlip}
-          onClaim={onClaim}
+          onClaim={(playerId) => dispatch({ type: 'claim', playerId })}
           onPeek={() => setPeeking(true)}
         />
       )}
@@ -178,6 +170,14 @@ export default function PyramidGame() {
           state={state}
           onGive={(targetId) => dispatch({ type: 'give', targetId })}
           onCancel={() => dispatch({ type: 'cancelGive' })}
+        />
+      )}
+
+      {state.phase === 'challenge' && (
+        <ChallengeScreen
+          state={state}
+          onAccept={() => dispatch({ type: 'accept' })}
+          onCallLiar={() => dispatch({ type: 'callLiar' })}
         />
       )}
 
@@ -192,7 +192,7 @@ export default function PyramidGame() {
       <ConfirmDialog
         open={confirmQuit}
         title="Quitter la partie ?"
-        description="La pyramide est déjà en place. Tout sera perdu."
+        description="Les cartes sont déjà distribuées. Tout sera perdu."
         confirmLabel="Quitter"
         cancelLabel="Continuer à jouer"
         onConfirm={quitToSetup}

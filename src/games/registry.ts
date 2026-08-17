@@ -77,10 +77,10 @@ export const GAMES: readonly GameMeta[] = [
   {
     id: 'pyramid',
     name: 'La Pyramide',
-    tagline: 'Une carte se retourne. Si tu l’as, quelqu’un boit.',
+    tagline: 'Quatre paris, puis la pyramide. Bluffe, ou bois double.',
     accent: '#ff6b4a',
     path: '/la-pyramide',
-    playersLabel: '2 à 12 joueurs',
+    playersLabel: '2 à 10 joueurs',
     minPlayers: 2,
   },
   {

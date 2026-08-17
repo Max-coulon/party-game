@@ -1,7 +1,6 @@
 import { Screen } from '@/shared/layout/Screen'
 import { Button } from '@/shared/ui/Button'
 import { plural } from '@/shared/lib/format'
-import { cn } from '@/shared/lib/cn'
 import { rankName, rankPhrase } from '../cards'
 import { currentSlot, playerById, sipsFor, unrevealedCount } from '../engine'
 import type { Gift, PyramidState } from '../engine'
@@ -10,13 +9,12 @@ import { PyramidBoard } from './PyramidBoard'
 
 interface TableScreenProps {
   state: PyramidState
-  failedId: string | null
   onFlip: () => void
   onClaim: (playerId: string) => void
   onPeek: () => void
 }
 
-export function TableScreen({ state, failedId, onFlip, onClaim, onPeek }: TableScreenProps) {
+export function TableScreen({ state, onFlip, onClaim, onPeek }: TableScreenProps) {
   const slot = currentSlot(state)
   const revealed = Boolean(slot?.revealed)
   const remaining = unrevealedCount(state)
@@ -30,7 +28,7 @@ export function TableScreen({ state, failedId, onFlip, onClaim, onPeek }: TableS
         <>
           {revealed ? (
             <Button full onClick={onFlip}>
-              {last ? 'On dévoile les mains' : 'Carte suivante'}
+              {last ? 'Terminer' : 'Carte suivante'}
             </Button>
           ) : (
             <Button full onClick={onFlip}>
@@ -58,7 +56,7 @@ export function TableScreen({ state, failedId, onFlip, onClaim, onPeek }: TableS
         </h2>
         <p className="text-muted mt-1.5 text-sm text-balance">
           {revealed && slot
-            ? `Qui a ${rankPhrase(slot.card.rank)} ? Tape ton nom.`
+            ? `Qui a ${rankPhrase(slot.card.rank)} ? Tape ton nom — même pour bluffer.`
             : 'On commence au sommet. Une carte, autant de gorgées que le rang.'}
         </p>
       </header>
@@ -75,23 +73,17 @@ export function TableScreen({ state, failedId, onFlip, onClaim, onPeek }: TableS
 
       {revealed && (
         <ul className="grid grid-cols-2 gap-2">
-          {state.players.map((player) => {
-            const shook = failedId === player.id
-            return (
-              <li key={player.id}>
-                <button
-                  type="button"
-                  onClick={() => onClaim(player.id)}
-                  className={cn(
-                    'surface flex min-h-14 w-full items-center justify-center rounded-2xl px-3 text-center text-sm font-semibold transition-transform active:scale-[0.99]',
-                    shook && 'animate-shake',
-                  )}
-                >
-                  {player.name}
-                </button>
-              </li>
-            )
-          })}
+          {state.players.map((player) => (
+            <li key={player.id}>
+              <button
+                type="button"
+                onClick={() => onClaim(player.id)}
+                className="surface flex min-h-14 w-full items-center justify-center rounded-2xl px-3 text-center text-sm font-semibold transition-transform active:scale-[0.99]"
+              >
+                {player.name}
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </Screen>
@@ -103,18 +95,19 @@ function GiftBanner({ gift, state }: { gift: Gift; state: PyramidState }) {
   const to = playerById(state, gift.toId)?.name
   if (!from || !to) return null
 
+  const text =
+    gift.outcome === 'shown'
+      ? `${from} ne mentait pas. ${to} boit ${plural(gift.sips, 'gorgée')}.`
+      : gift.outcome === 'lied'
+        ? `${to} mentait. ${plural(gift.sips, 'gorgée')} pour ${to}.`
+        : gift.outcome === 'dealMiss'
+          ? `${to} a raté. ${plural(gift.sips, 'gorgée')}.`
+          : `${from} → ${to} · ${plural(gift.sips, 'gorgée')}`
+
   return (
     <div className="bg-accent/12 border-accent/30 animate-deal-in flex items-center gap-3 rounded-2xl border px-3 py-2.5">
-      <CardFace card={gift.card} size="sm" className="w-9 shrink-0" />
-      <p className="min-w-0 text-sm text-balance">
-        <span className="font-semibold">{from}</span>
-        {' → '}
-        <span className="font-semibold">{to}</span>
-        <span className="text-muted">
-          {' · '}
-          {plural(gift.sips, 'gorgée')}
-        </span>
-      </p>
+      {gift.card && <CardFace card={gift.card} size="sm" className="w-9 shrink-0" />}
+      <p className="min-w-0 text-sm text-balance">{text}</p>
     </div>
   )
 }
