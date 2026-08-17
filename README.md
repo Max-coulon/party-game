@@ -1,6 +1,6 @@
 # Party Game
 
-Sept jeux de soirée qui se jouent autour d'une table, avec un seul téléphone qui passe de main
+Huit jeux de soirée qui se jouent autour d'une table, avec un seul téléphone qui passe de main
 en main. Application web installable (PWA), mobile-first, hors ligne, sans compte ni serveur.
 
 ## Démarrer
@@ -29,6 +29,7 @@ npm run dev        # http://localhost:5173
 | **Fais deviner**    | En équipes, au chrono. Preset **Time's Up** (3 manches sur le même paquet) ou **Mix** (manches et paquets au choix), 6 façons de faire deviner. |
 | **Le Réseau**       | Deux camps, vingt-cinq mots posés sur la table, et un chef de réseau par camp — seul à savoir à qui ils sont. Il donne un mot et un chiffre, son équipe touche les cartes. La taupe met fin à la partie sur le champ. |
 | **Le Puant**        | Le pouilleux, mais à mains cachées sur un seul écran : on présente son éventail face cachée au voisin, qui tape un dos. Le dernier à tenir le valet de pique a perdu. |
+| **La Pyramide**     | Un triangle de cartes au centre de la table. On retourne du sommet vers la base : qui a la valeur la joue et désigne quelqu’un. Autant de gorgées que le rang. |
 | **Tirage au doigt** | Tout le monde pose un doigt, le sort désigne — ou répartit tout le monde en équipes.                                                          |
 
 ## Architecture
@@ -65,7 +66,11 @@ Le Puant applique le même principe aux cartes : passé le sas, l'écran ne mont
 celui qui tient l'appareil, et l'éventail du voisin n'est qu'une grille de dos — remélangée à
 chaque présentation, pour que personne ne mémorise une position d'un tour sur l'autre.
 
-Le Réseau est le seul jeu où le téléphone reste au centre de la table : il n'en part que le temps
+La Pyramide pose le téléphone au centre une fois les mains vues : le triangle se retourne
+là, et le sas ne revient que pour relire ses cartes. Les cartes encore en main à la fin se
+paient, pour que personne ne garde un as jusqu'au bout.
+
+Le Réseau est l'autre jeu où le téléphone reste au centre de la table : il n'en part que le temps
 pour un chef de réseau de voir sa clé, et il y revient sans elle. Là, l'accent ne dit plus le jeu
 mais le camp — il bascule du rouge au bleu à chaque changement de main, et la nappe de lumière du
 fond avec lui. Les cartes se retournent sur un demi-tour en CSS, les mots du plateau sont écrits

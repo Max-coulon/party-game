@@ -11,6 +11,7 @@ const TruthOrDareGame = lazy(() => import('@/games/truth-or-dare/TruthOrDareGame
 const GuessGame = lazy(() => import('@/games/guess/GuessGame'))
 const FingerPickerGame = lazy(() => import('@/games/finger-picker/FingerPickerGame'))
 const PuantGame = lazy(() => import('@/games/puant/PuantGame'))
+const PyramidGame = lazy(() => import('@/games/pyramid/PyramidGame'))
 const ReseauGame = lazy(() => import('@/games/reseau/ReseauGame'))
 
 function Loading() {
@@ -33,6 +34,7 @@ export function App() {
               <Route path="/fais-deviner" element={<GuessGame />} />
               <Route path="/chooser" element={<FingerPickerGame />} />
               <Route path="/le-puant" element={<PuantGame />} />
+              <Route path="/la-pyramide" element={<PyramidGame />} />
               <Route path="/le-reseau" element={<ReseauGame />} />
               <Route path="*" element={<NotFoundScreen />} />
             </Route>

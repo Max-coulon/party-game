@@ -5,6 +5,7 @@ export type GameId =
   | 'guess'
   | 'finger-picker'
   | 'puant'
+  | 'pyramid'
   | 'reseau'
 
 export interface GameMeta {
@@ -72,6 +73,15 @@ export const GAMES: readonly GameMeta[] = [
     path: '/le-puant',
     playersLabel: '3 à 8 joueurs',
     minPlayers: 3,
+  },
+  {
+    id: 'pyramid',
+    name: 'La Pyramide',
+    tagline: 'Une carte se retourne. Si tu l’as, quelqu’un boit.',
+    accent: '#ff6b4a',
+    path: '/la-pyramide',
+    playersLabel: '2 à 12 joueurs',
+    minPlayers: 2,
   },
   {
     id: 'finger-picker',

@@ -53,6 +53,14 @@ const PATHS: Record<GameId, ReactElement> = {
       <path d="M17.6 17.6 13.8 13.8" />
     </>
   ),
+  // Trois cartes en triangle : le sommet d'abord, la base ensuite.
+  pyramid: (
+    <>
+      <rect x="8" y="2.5" width="8" height="7.5" rx="1.4" />
+      <rect x="3.5" y="11.5" width="8" height="7.5" rx="1.4" />
+      <rect x="12.5" y="11.5" width="8" height="7.5" rx="1.4" />
+    </>
+  ),
   // Une carte seule, et ce qui s'en échappe.
   puant: (
     <>
